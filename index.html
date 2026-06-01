@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<!-- v144040 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TreviPay · Building the Operating System for Enterprise Scale</title>
+<link href="https://fonts.bunny.net/css?family=playfair-display:400,400i,700|dm-sans:300,400,500,600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0e1a;
+  --ink-mid:#111827;
+  --ink-card:#1a2236;
+  --ink-border:rgba(255,255,255,.08);
+  --ink-border-mid:rgba(255,255,255,.14);
+  --on-ink:rgba(255,255,255,.92);
+  --on-ink-dim:rgba(255,255,255,.90);
+  --on-ink-muted:rgba(255,255,255,.72);
+  --e:#003ce6;--c:#00d4ff;
+  --blue-lt:#dce6ff;--blue-mid:#3360e0;
+  --green:#059669;--green-lt:#ecfdf5;
+  --red:#dc2626;--amber:#d97706;--amber-lt:#fef3c7;
+  --slate:#0f172a;--slate-mid:#1e293b;
+  --muted:#475569;--subtle:#94a3b8;
+  --border:#e2e8f0;--bg:#f8fafc;--white:#fff;
+  --teal:#0d9488;--teal-lt:rgba(13,148,136,.15);--teal-border:rgba(13,148,136,.35);--purple:#5c4dd6;--purple-lt:rgba(92,77,214,.15);--purple-border:rgba(92,77,214,.35);
+  --pf:'Playfair Display',Georgia,serif;
+  --sf:'DM Sans','Segoe UI',system-ui,sans-serif;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GLOBAL RESETS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html,body{width:100%;background:var(--white);color:var(--slate);font-family:var(--sf)}
+body.course-active{overflow:hidden;height:100vh}
+body.course-active #nav{display:flex}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HOME SCREEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#home{display:block;width:100%;min-height:100vh;background:var(--ink-mid)}
+.h-header{
+  background:linear-gradient(160deg,#1e293b 0%,#0f172a 60%,#1e293b 100%);
+  padding:3rem 2rem 2.5rem;text-align:center;position:relative;overflow:hidden
+}
+.h-header::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(rgba(0,212,255,0.12) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none
+}
+.h-header::after{
+  content:'';position:absolute;
+  top:-120px;right:-80px;width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,255,0.15) 0%,transparent 60%);
+  pointer-events:none
+}
+.h-logo{height:44px;width:auto;margin-bottom:1.5rem;mix-blend-mode:screen;position:relative;z-index:1}
+.h-eyebrow{font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--c);margin-bottom:.75rem;position:relative;z-index:1}
+.h-title{font-family:var(--pf);font-size:clamp(30px,3.5vw,57px);font-weight:400;line-height:1.1;color:#fff;margin-bottom:.75rem;position:relative;z-index:1}
+.h-title em{color:var(--c);font-style:italic}
+.h-sub{font-size:16px;font-weight:300;line-height:1.75;color:rgba(255,255,255,.82);max-width:520px;margin:0 auto 1.25rem;position:relative;z-index:1}
+.h-meta{display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;position:relative;z-index:1}
+.h-meta span{font-size:13px;color:rgba(255,255,255,.35)}
+
+.h-body{max-width:860px;margin:0 auto;padding:2.5rem 2rem 4rem;background:var(--ink-mid)}
+.h-section-label{font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:1rem;opacity:.7}
+
+/* Chapter cards on home */
+.h-card{
+  display:flex;align-items:center;background:var(--white);
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  margin-bottom:.75rem;cursor:pointer;transition:all .2s
+}
+.h-card:hover{border-color:rgba(0,212,255,.4);transform:translateX(4px);box-shadow:0 4px 20px rgba(0,212,255,.1)}
+.h-card-num{
+  width:52px;background:rgba(0,60,230,.18);border-right:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;align-self:stretch;
+  font-family:var(--pf);font-size:24px;color:var(--e);flex-shrink:0
+}
+.h-card-body{flex:1;padding:.9rem 1.25rem}
+.h-card-tag{font-size:12px;font-weight:600;color:var(--c);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;opacity:.7}
+.h-card-name{font-size:17px;font-weight:600;color:var(--on-ink);margin-bottom:3px}
+.h-card-q{font-size:14px;color:rgba(255,255,255,.75);font-style:italic}
+.h-card-meta{padding-right:1.25rem;display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.h-card-slides{font-size:13px;color:var(--on-ink-muted)}
+.h-card-arrow{font-size:18px;color:var(--ink-border-mid);transition:all .2s}
+.h-card:hover .h-card-arrow{color:var(--c)}
+
+.h-begin-btn{
+  width:100%;background:var(--e);color:#fff;border:none;border-radius:12px;
+  padding:1rem;font-family:var(--sf);font-size:17px;font-weight:600;cursor:pointer;
+  transition:all .2s;margin-top:1.5rem;letter-spacing:.02em
+}
+.h-begin-btn:hover{background:var(--blue-mid);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,60,230,.25)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COURSE WRAPPER (full-screen, fixed)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#course{display:none;position:fixed;inset:0;background:var(--ink);z-index:100;overflow:hidden}
+#course.active{display:block}
+
+/* Progress bar */
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--e),var(--c));transition:width .4s ease;z-index:300}
+
+/* Slide count */
+#slide-count{position:fixed;top:1.1rem;right:1.5rem;font-size:13px;color:var(--on-ink-muted);z-index:200;letter-spacing:.08em}
+
+/* Phase bar */
+#phase-bar{
+  position:fixed;top:0;left:0;right:0;height:44px;
+  background:rgba(10,14,26,.92);border-bottom:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(12px);
+  display:flex;align-items:center;padding:0 1.5rem;gap:1.25rem;z-index:200
+}
+.pb-logo{height:20px;width:auto;flex-shrink:0;border-radius:4px}
+.pb-phases{display:flex;gap:6px;flex:1;justify-content:center}
+.pb-seg{
+  flex:1;max-width:160px;height:4px;border-radius:2px;
+  background:var(--border);transition:all .3s;cursor:pointer;position:relative
+}
+.pb-seg.done{background:rgba(0,60,230,.18);border:1px solid rgba(0,60,230,.2)}
+.pb-seg.active{background:linear-gradient(90deg,var(--e),var(--c))}
+.pb-seg-label{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap;letter-spacing:.06em;text-transform:uppercase
+}
+.pb-seg.active .pb-seg-label{color:var(--c);font-weight:700;font-size:10px}
+#phase-name{font-size:13px;color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
+
+/* Slides */
+.slide{
+  position:absolute;inset:0;padding-top:44px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding-left:3.5rem;padding-right:3.5rem;padding-bottom:5rem;
+  opacity:0;pointer-events:none;transition:opacity .5s ease;overflow:hidden
+}
+.slide.active{opacity:1;pointer-events:all}
+
+/* Slide backgrounds */
+.bg-white{background:var(--ink-mid)}
+.bg-light{background:var(--ink)}
+.bg-blue{background:var(--e)}
+.bg-blue-grad{background:linear-gradient(160deg,#1e293b 0%,#0f172a 100%)}
+.bg-carib-grad{background:linear-gradient(160deg,#0099bb 0%,var(--e) 100%)}
+.bg-teal-grad{background:linear-gradient(160deg,#0d2b29 0%,#0f172a 60%,#1e293b 100%)}
+.bg-purple-grad{background:linear-gradient(160deg,#1e1b3a 0%,#0f172a 60%,#1e293b 100%)}
+
+/* Dot grid overlay for hero slides */
+.dot-field::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(rgba(0,212,255,0.12) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none
+}
+
+/* Grid lines for content slides */
+.grid-lines::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,60,230,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,60,230,0.025) 1px,transparent 1px);
+  background-size:64px 64px;pointer-events:none
+}
+
+/* Glow elements */
+.glow{position:absolute;border-radius:50%;pointer-events:none}
+.ge{background:radial-gradient(circle,rgba(0,60,230,0.12) 0%,transparent 65%)}
+.gc{background:radial-gradient(circle,rgba(0,212,255,0.1) 0%,transparent 65%)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ANIMATION SYSTEM (exact from course)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideR{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes scaleUp{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+
+.a0{animation:fadeUp .65s 0s ease both}
+.a1{animation:fadeUp .65s .12s ease both}
+.a2{animation:fadeUp .65s .24s ease both}
+.a3{animation:fadeUp .65s .36s ease both}
+.a4{animation:fadeUp .65s .48s ease both}
+.a5{animation:fadeUp .65s .60s ease both}
+.a6{animation:fadeUp .65s .72s ease both}
+.ar0{animation:slideR .65s 0s ease both}
+.ar1{animation:slideR .65s .15s ease both}
+.ar2{animation:slideR .65s .30s ease both}
+.al0{animation:slideL .65s 0s ease both}
+.sc0{animation:scaleUp .65s 0s ease both}
+.sc1{animation:scaleUp .65s .15s ease both}
+.sc2{animation:scaleUp .65s .30s ease both}
+.sc3{animation:scaleUp .65s .45s ease both}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TYPOGRAPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.overline{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:.75rem}
+.overline-dim{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--on-ink-muted);margin-bottom:.75rem}
+.overline-white{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:.75rem}
+.display{font-family:var(--pf);font-weight:400;line-height:1.1;color:var(--on-ink)}
+.display-xl{font-size:clamp(44px,5.5vw,77px)}
+.display-lg{font-size:clamp(33px,4vw,57px)}
+.display-md{font-size:clamp(24px,3vw,39px)}
+.display-sm{font-size:clamp(22px,2.5vw,32px)}
+.display em{color:var(--c);font-style:italic}
+.display.on-dark{color:#fff}
+.display.on-blue em{color:var(--c)}
+.lead{font-size:18px;font-weight:300;line-height:1.8;color:var(--on-ink-dim)}
+.lead.on-blue{color:rgba(255,255,255,.92)}
+.body-txt{font-size:16px;font-weight:300;line-height:1.8;color:var(--on-ink-dim)}
+.body-bright{font-size:16px;font-weight:400;line-height:1.75;color:var(--on-ink)}
+.rule{display:block;height:2px;background:var(--c);border-radius:1px;margin:1.25rem 0}
+.rule.white{background:rgba(255,255,255,.3)}
+.rule-sm{width:40px}
+
+.center{text-align:center;align-items:center}
+.left{align-items:flex-start}
+.split2{display:grid;grid-template-columns:1fr 1fr;gap:3.5rem;align-items:center;width:100%;max-width:960px}
+.split3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;width:100%;max-width:960px}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COMPONENT LIBRARY (light versions)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* Glass cards — light equivalent */
+.card{background:var(--ink-card);border:1px solid var(--ink-border-mid);border-radius:16px;padding:1.5rem}
+.card-blue{background:rgba(0,60,230,.2);border:1px solid rgba(0,60,230,.4);border-radius:16px;padding:1.5rem}
+.card-carib{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-radius:16px;padding:1.5rem}
+.card-green{background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.3);border-radius:16px;padding:1.5rem}
+.card-amber{background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.3);border-radius:16px;padding:1.5rem}
+.card-surface{background:rgba(255,255,255,.05);border:1px solid var(--ink-border);border-radius:16px;padding:1.5rem}
+
+/* On-blue glass cards */
+.glass{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:1.5rem}
+.glass-c{background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);border-radius:16px;padding:1.5rem}
+.glass-good{background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:16px;padding:1.5rem}
+
+/* Principle rows */
+.principle-row{display:flex;align-items:flex-start;gap:14px;padding:1rem 0;border-bottom:1px solid var(--ink-border)}
+.principle-row:last-child{border-bottom:none;padding-bottom:0}
+.pr-icon{width:36px;height:36px;border-radius:10px;background:rgba(0,60,230,.2);border:1px solid rgba(0,60,230,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.pr-body h4{font-size:17px;font-weight:600;color:var(--on-ink);margin-bottom:4px}
+.pr-body p{font-size:14px;color:var(--on-ink-dim);line-height:1.55}
+
+/* Compare rows */
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%;max-width:900px}
+.compare-col{border-radius:14px;padding:1.25rem 1.5rem}
+.compare-col.bad{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3)}
+.compare-col.good{background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3)}
+.compare-label{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.75rem}
+.compare-label.bad{color:var(--red)}
+.compare-label.good{color:var(--green)}
+.compare-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:.5rem}
+.compare-item:last-child{margin-bottom:0}
+.ci-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.ci-dot.bad{background:var(--red)}
+.ci-dot.good{background:var(--green)}
+.compare-item p{font-size:15px;color:var(--on-ink-dim);line-height:1.6}
+
+/* Pull quote */
+.pull-quote{border-left:3px solid var(--c);padding:1rem 1.5rem;border-radius:0 12px 12px 0;background:rgba(0,212,255,.08)}
+.pull-quote p{font-family:var(--pf);font-size:22px;font-style:italic;color:var(--on-ink);line-height:1.6}
+.pull-quote cite{font-size:13px;color:var(--on-ink-muted);margin-top:.5rem;display:block;font-style:normal;letter-spacing:.08em;text-transform:uppercase}
+
+/* Reflect card */
+.reflect-card{width:100%;max-width:720px;background:rgba(0,60,230,.2);border:1px solid rgba(0,60,230,.4);border-radius:20px;padding:2rem 2.25rem}
+.reflect-icon{font-size:28px;margin-bottom:1rem}
+.reflect-label{font-size:12px;font-weight:600;color:var(--c);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
+.reflect-question{font-family:var(--pf);font-size:clamp(19px,2.5vw,28px);color:var(--on-ink);line-height:1.45;margin-bottom:1.25rem}
+.reflect-prompts{display:flex;flex-direction:column;gap:8px}
+.reflect-prompt{display:flex;align-items:flex-start;gap:10px;padding:.75rem 1rem;background:rgba(255,255,255,.07);border-radius:10px}
+.rp-dot{width:6px;height:6px;border-radius:50%;background:var(--e);flex-shrink:0;margin-top:7px}
+.rp-text{font-size:16px;color:var(--on-ink-dim);line-height:1.65}
+.reflect-cta{margin-top:1.5rem;font-size:14px;color:var(--c);font-style:italic;opacity:.7}
+
+/* Phase pill */
+.phase-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(0,60,230,.18);border:1px solid rgba(0,60,230,.25);border-radius:100px;padding:6px 14px 6px 8px}
+.phase-num{width:22px;height:22px;border-radius:50%;background:var(--e);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.phase-text{font-size:13px;font-weight:600;color:var(--e);letter-spacing:.08em;text-transform:uppercase}
+
+/* On-blue phase pill */
+.phase-pill-white{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:100px;padding:6px 14px 6px 8px}
+.phase-pill-white .phase-num{background:rgba(255,255,255,.25);color:#fff}
+.phase-pill-white .phase-text{color:#fff}
+
+/* Stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;width:100%;max-width:900px}
+.stat-card{background:var(--ink-card);border:1px solid var(--ink-border-mid);border-radius:14px;padding:1.5rem;text-align:center}
+.stat-num{font-family:var(--pf);font-size:clamp(39px,4vw,61px);line-height:1;color:var(--e);margin-bottom:.5rem}
+.stat-label{font-size:15px;color:var(--on-ink-dim);line-height:1.55}
+
+/* Tension cards */
+.tension-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.875rem;width:100%;max-width:900px}
+.tcard{border-radius:12px;padding:1.25rem}
+.tcard.say{background:rgba(0,60,230,.18);border:1px solid rgba(0,60,230,.35)}
+.tcard.do{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3)}
+.tcard.gap{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3)}
+.tc-lbl{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.6rem}
+.tcard.say .tc-lbl{color:var(--e)}
+.tcard.do .tc-lbl{color:var(--red)}
+.tcard.gap .tc-lbl{color:var(--amber)}
+.tc-body{font-size:15px;color:var(--on-ink-dim);line-height:1.6}
+
+/* From-to */
+.from-to{display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:center;margin-bottom:10px;width:100%;max-width:900px}
+.ft-item{background:rgba(255,255,255,.05);border:1px solid var(--ink-border);border-radius:8px;padding:12px 16px;font-size:16px;color:var(--on-ink-dim);line-height:1.45}
+.ft-item.to{border-left:3px solid var(--c);color:#fff;font-weight:600;background:rgba(0,212,255,.1)}
+.ft-arrow{color:var(--c);text-align:center;font-size:17px}
+
+/* Behavior grid */
+.behavior-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.875rem;width:100%;max-width:960px}
+.bcard{background:var(--ink-card);border:1px solid var(--ink-border-mid);border-radius:12px;padding:1.25rem;display:flex;gap:12px;align-items:flex-start;transition:all .2s}
+.bcard:hover{background:rgba(0,60,230,.25);border-color:rgba(0,60,230,.5);transform:translateY(-2px)}
+.bcard-icon{font-size:20px;flex-shrink:0}
+.bcard-num{font-size:11px;font-weight:700;color:var(--c);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;opacity:.7}
+.bcard-title{font-size:15px;font-weight:600;color:var(--on-ink);margin-bottom:3px}
+.bcard-desc{font-size:15px;color:var(--on-ink-dim);line-height:1.55}
+
+/* Greiner phases */
+.greiner-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.875rem;width:100%;max-width:960px}
+.gphase{border-radius:12px;padding:1.25rem;position:relative}
+.gphase.past{background:rgba(255,255,255,.04);border:1px solid var(--ink-border);opacity:.7}
+.gphase.now{background:rgba(0,60,230,.2);border:2px solid rgba(0,60,230,.6)}
+.gphase.future{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.15)}
+.gphase-badge{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem}
+.gphase.past .gphase-badge{color:rgba(255,255,255,.65)}
+.gphase.now .gphase-badge{color:var(--e)}
+.gphase.future .gphase-badge{color:var(--green)}
+.gphase-title{font-family:var(--pf);font-size:22px;color:var(--on-ink);margin-bottom:.75rem}
+.gphase.now .gphase-title{color:var(--c)}
+.gphase-items{list-style:none;font-size:14px;color:var(--on-ink-dim);line-height:1.8}
+.gphase-items li{display:flex;gap:8px;align-items:flex-start}
+.gphase-items li::before{content:'·';color:rgba(255,255,255,.65);flex-shrink:0}
+.now-badge{
+  position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+  background:var(--e);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CHAPTER 5 & 6 COMPONENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.overline-teal{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:.75rem}
+.overline-purple{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#a78bfa;margin-bottom:.75rem}
+.rule.teal{background:var(--teal)}.rule.purple{background:#a78bfa}
+.card-teal{background:var(--teal-lt);border:1px solid var(--teal-border);border-radius:16px;padding:1.5rem}
+.card-purple{background:var(--purple-lt);border:1px solid var(--purple-border);border-radius:16px;padding:1.5rem}
+.gt{background:radial-gradient(circle,rgba(13,148,136,.14) 0%,transparent 65%)}
+.gp{background:radial-gradient(circle,rgba(92,77,214,.16) 0%,transparent 65%)}
+.ccard{background:var(--ink-card);border:1px solid var(--ink-border-mid);border-radius:12px;padding:1.25rem;display:flex;gap:14px;align-items:flex-start;transition:all .2s}
+.ccard:hover{background:rgba(13,148,136,.2);border-color:var(--teal-border);transform:translateY(-2px)}
+.ccard.new-comp{background:rgba(13,148,136,.18);border:1.5px solid var(--teal);box-shadow:0 0 20px rgba(13,148,136,.15)}
+.ccard.new-comp:hover{background:rgba(13,148,136,.28)}
+.ccard-num{font-size:11px;font-weight:700;color:var(--c);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;opacity:.7}
+.ccard-title{font-size:15px;font-weight:600;color:var(--on-ink);margin-bottom:3px}
+.ccard-desc{font-size:14px;color:var(--on-ink-dim);line-height:1.55}
+.ccard-new-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--teal);border-radius:4px;padding:3px 9px;margin-top:7px}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem;width:100%;max-width:900px}
+.ft-item.to-teal{border-left:3px solid var(--teal);color:#fff;font-weight:600;background:rgba(13,148,136,.12)}
+.ft-arrow-teal{color:var(--teal);text-align:center;font-size:17px}
+.premise-chain{display:flex;flex-direction:column;gap:0;width:100%;max-width:860px}
+.premise-item{display:flex;align-items:stretch;gap:0}
+.premise-num{width:44px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.premise-circle{width:32px;height:32px;border-radius:50%;background:#5c4dd6;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+.premise-line{width:2px;flex:1;background:rgba(92,77,214,.3);margin:0 auto}
+.premise-item:last-child .premise-line{display:none}
+.premise-body{flex:1;padding:.25rem 0 1.25rem 1rem}
+.premise-head{font-size:17px;font-weight:600;color:var(--on-ink);margin-bottom:.25rem}
+.premise-sub{font-size:14px;color:var(--on-ink-dim);line-height:1.55}
+.mech-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%;max-width:900px}
+.mcard{border-radius:14px;padding:1.5rem;display:flex;flex-direction:column;gap:.75rem}
+.mcard.perf{background:rgba(0,60,230,.15);border:1px solid rgba(0,60,230,.3)}
+.mcard.bonus{background:rgba(92,77,214,.15);border:1px solid var(--purple-border)}
+.mcard-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.25rem}
+.mcard.perf .mcard-label{color:var(--c)}.mcard.bonus .mcard-label{color:#a78bfa}
+.mcard-title{font-family:var(--pf);font-size:22px;color:var(--on-ink);line-height:1.2}
+.mcard-body{font-size:15px;color:var(--on-ink-dim);line-height:1.6}
+.mcard-detail{display:flex;flex-direction:column;gap:6px;margin-top:.25rem}
+.mcard-item{display:flex;gap:8px;align-items:flex-start}
+.mcard-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.mcard.perf .mcard-dot{background:var(--c)}.mcard.bonus .mcard-dot{background:#a78bfa}
+.mcard-item p{font-size:14px;color:var(--on-ink-dim);line-height:1.5}
+/* Reflect card teal/purple variants */
+.reflect-card-teal{width:100%;max-width:720px;background:rgba(13,148,136,.15);border:1px solid var(--teal-border);border-radius:20px;padding:2rem 2.25rem}
+.reflect-card-purple{width:100%;max-width:720px;background:rgba(92,77,214,.15);border:1px solid var(--purple-border);border-radius:20px;padding:2rem 2.25rem}
+.reflect-label-teal{font-size:12px;font-weight:600;color:var(--teal);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
+.reflect-label-purple{font-size:12px;font-weight:600;color:#a78bfa;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
+.rp-dot-teal{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:7px}
+.rp-dot-purple{width:6px;height:6px;border-radius:50%;background:#5c4dd6;flex-shrink:0;margin-top:7px}
+.reflect-cta-teal{margin-top:1.5rem;font-size:14px;color:var(--teal);font-style:italic;opacity:.85}
+.reflect-cta-purple{margin-top:1.5rem;font-size:14px;color:#a78bfa;font-style:italic;opacity:.85}
+.pull-quote-teal{border-left:3px solid var(--teal);padding:1rem 1.5rem;border-radius:0 12px 12px 0;background:rgba(13,148,136,.08)}
+.pull-quote-teal p{font-family:var(--pf);font-size:22px;font-style:italic;color:var(--on-ink);line-height:1.6}
+.pull-quote-purple{border-left:3px solid #5c4dd6;padding:1rem 1.5rem;border-radius:0 12px 12px 0;background:rgba(92,77,214,.08)}
+.pull-quote-purple p{font-family:var(--pf);font-size:22px;font-style:italic;color:var(--on-ink);line-height:1.6}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NAV PILL (exact from course)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#nav{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  display:none;align-items:center;gap:1.25rem;z-index:200;
+  background:rgba(15,30,60,.95);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:.6rem 1.4rem;
+  box-shadow:0 4px 24px rgba(0,0,0,.4)
+}
+.ndots{display:flex;gap:5px}
+.ndot{width:5px;height:5px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .3s}
+.ndot.on{background:var(--e);width:18px;border-radius:3px}
+.nbtn{background:none;border:none;color:rgba(255,255,255,.65);cursor:pointer;font-size:18px;padding:0 2px;transition:color .2s;line-height:1}
+.nbtn:hover{color:#fff}
+.nbtn:disabled{opacity:.25;cursor:default}
+.nlbl{font-size:14px;color:rgba(255,255,255,.8);min-width:120px;text-align:center;letter-spacing:.04em}
+
+/* Next-phase button */
+.np-btn{
+  display:inline-block;background:var(--e);color:#fff;border:none;
+  border-radius:100px;padding:.65rem 1.5rem;font-family:var(--sf);font-size:15px;
+  font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.02em
+}
+.np-btn:hover{background:var(--blue-mid);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,60,230,.3)}
+.np-btn.final{background:var(--green)}
+.np-btn.final:hover{background:#047857}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COMPLETE / TRANSITION SCREEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#complete{
+  display:none;position:fixed;inset:0;
+  background:linear-gradient(160deg,#1e293b 0%,#0f172a 100%);
+  z-index:150;align-items:center;justify-content:center;flex-direction:column;
+  text-align:center;padding:3rem
+}
+#complete.active{display:flex}
+.cs-logo{height:40px;mix-blend-mode:screen;margin-bottom:2rem}
+.cs-eyebrow{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:1rem}
+.cs-title{font-family:var(--pf);font-size:clamp(35px,4vw,61px);color:#fff;line-height:1.1;margin-bottom:1rem}
+.cs-title em{color:var(--c);font-style:italic}
+.cs-sub{font-size:17px;font-weight:300;color:rgba(255,255,255,.7);line-height:1.75;max-width:520px;margin:0 auto 2.5rem}
+.cs-btn{
+  display:inline-block;background:#fff;color:var(--e);
+  border:none;border-radius:100px;padding:1rem 2.5rem;
+  font-family:var(--sf);font-size:17px;font-weight:700;
+  cursor:pointer;transition:all .2s;text-decoration:none;letter-spacing:.02em
+}
+.cs-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,0,0,.2)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SESSION TOOL (appended after primer)
+   Same styles as the working session tool
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#session-tool{display:none;position:fixed;inset:0;z-index:500;flex-direction:column;background:#0d1f3c}
+#session-tool.active{display:flex}
+
+/* Reuse existing session tool styles */
+.topbar{background:var(--e);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.topbar-logo{height:24px;width:auto;mix-blend-mode:screen}
+.topbar-mid{font-size:15px;font-weight:600;color:rgba(255,255,255,.9)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.tbadge{font-size:10px;letter-spacing:.06em;padding:3px 9px;border-radius:20px;font-weight:600}
+.tbadge-code{background:rgba(255,255,255,.18);color:#fff}
+.tbadge-fac{background:rgba(0,212,255,.2);color:var(--c);border:1px solid rgba(0,212,255,.35)}
+.tbadge-part{background:rgba(5,150,105,.2);color:#34d399;border:1px solid rgba(5,150,105,.3)}
+.live-dot{width:6px;height:6px;background:var(--c);border-radius:50%;animation:livepulse 1.4s infinite;display:inline-block;margin-right:4px}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.25}}
+.count-lbl{font-size:14px;color:rgba(255,255,255,.85)}
+.sess-tabs{display:flex;background:#0a1628;border-bottom:1px solid rgba(255,255,255,.12);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.sess-tabs::-webkit-scrollbar{display:none}
+.stab{flex-shrink:0;padding:0 18px;height:48px;display:flex;align-items:center;gap:7px;cursor:pointer;border-bottom:2px solid transparent;font-size:15px;color:rgba(255,255,255,.82);font-weight:500;white-space:nowrap;transition:all .15s}
+.stab:hover{color:var(--on-ink);background:rgba(255,255,255,.08)}
+.stab.active{color:var(--c);border-bottom-color:var(--c);font-weight:700}
+.stab.done::after{content:" ✓";color:var(--green);font-size:10px}
+.tnum{font-size:9px;background:rgba(0,60,230,.18);color:var(--e);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.sess-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.bpanel{display:none;flex-direction:column;flex:1;overflow:hidden}
+.bpanel.active{display:flex}
+.bdef{background:rgba(0,60,230,.18);border-bottom:1px solid rgba(0,60,230,.1);padding:13px 18px;flex-shrink:0;display:flex;gap:12px;align-items:flex-start}
+.bdef-icon{font-size:19px;flex-shrink:0;margin-top:2px}
+.bdef-num{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--c);font-weight:700;margin-bottom:4px}
+.bdef-title{font-size:18px;font-weight:800;color:var(--on-ink);margin-bottom:4px}
+.bdef-quote{font-size:14px;color:var(--on-ink-dim);font-style:italic;line-height:1.6}
+.cols{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.col{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid rgba(255,255,255,.1)}
+.col:last-child{border-right:none}
+.col-head{padding:8px 13px;border-bottom:1px solid var(--ink-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.col-head.g{background:rgba(5,150,105,.2);border-top:2px solid rgba(5,150,105,.6)}.col-head.r{background:rgba(220,38,38,.18);border-top:2px solid rgba(220,38,38,.5)}
+.col-lbl{display:flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#fff}
+.rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rdot.g{background:var(--green)}.rdot.r{background:var(--red)}
+.col-cnt{font-size:15px;color:rgba(255,255,255,.8);font-weight:700}
+.rlist{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;background:#0d1f3c;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:24px 24px}
+.rcard{background:#1a3258;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:11px 36px 11px 14px;font-size:15px;color:var(--on-ink);line-height:1.45;position:relative}
+.rcard.gc{border-left:3px solid rgba(5,150,105,.8)}.rcard.rc{border-left:3px solid rgba(220,38,38,.8)}
+.rcard-auth{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:3px}
+.rcard-del{position:absolute;top:6px;right:8px;background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;font-size:14px;padding:1px 3px;line-height:1;transition:color .1s;display:none}
+.rcard:hover .rcard-del{display:block}
+.rcard-del:hover{color:var(--red)}
+@keyframes rpop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.rcard{animation:rpop .2s ease}
+.iarea{padding:8px 10px;border-top:1px solid rgba(255,255,255,.12);background:#0a1628;display:flex;gap:6px;flex-shrink:0}
+.rinput{flex:1;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:11px 14px;font-size:15px;font-family:var(--sf);color:#fff;outline:none;height:48px;transition:border-color .15s}
+.rinput:focus{border-color:var(--c);background:rgba(0,212,255,.08)}
+.rinput::placeholder{color:rgba(255,255,255,.4)}
+.sbtn{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;padding:11px 16px;font-size:18px;color:rgba(255,255,255,.8);cursor:pointer;transition:all .15s;flex-shrink:0;min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center}
+.sbtn.g:hover{background:rgba(5,150,105,.2);border-color:rgba(5,150,105,.6);color:#34d399}
+.sbtn.r:hover{background:rgba(220,38,38,.2);border-color:rgba(220,38,38,.6);color:#f87171}
+.btmbar{background:#0d1f3c;border-top:1px solid rgba(255,255,255,.15);padding:9px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.btm-info{font-size:15px;color:rgba(255,255,255,.85)}
+.btm-btns{display:flex;gap:8px}
+.btn-synth{background:var(--e);color:#fff;border:none;border-radius:8px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px}
+.btn-synth:hover{background:var(--blue-mid)}
+.btn-exp{background:transparent;border:1.5px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);border-radius:8px;padding:12px 16px;font-size:14px;cursor:pointer;transition:all .15s}
+.btn-exp:hover{border-color:var(--c);color:var(--c)}
+
+/* Session landing */
+.sess-land{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px;background:#0d1f3c}
+.sess-land-box{width:100%;max-width:440px;text-align:center}
+.sess-land-logo{height:64px;width:auto;margin-bottom:20px}
+.sess-transition-msg{font-size:13px;color:rgba(255,255,255,.85);background:rgba(0,60,230,.18);border-radius:8px;padding:10px 16px;margin-bottom:20px;border-left:3px solid var(--c)}
+.sess-eye{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c);font-weight:600;margin-bottom:10px}
+.sess-h{font-size:26px;font-weight:800;color:var(--on-ink);margin-bottom:6px;line-height:1.2}
+.sess-sub{font-size:15px;color:rgba(255,255,255,.75);line-height:1.65;margin-bottom:24px}
+.sfield{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.25);border-radius:8px;padding:14px 16px;font-size:16px;color:#fff;outline:none;transition:border-color .15s;margin-bottom:12px;font-family:var(--sf)}
+.sfield:focus{border-color:var(--c)}
+.sfield::placeholder{color:rgba(255,255,255,.45)}
+.sfield-code{font-family:Consolas,monospace;letter-spacing:.06em;text-transform:uppercase}
+.sfield-code::placeholder{font-family:var(--sf);letter-spacing:0;text-transform:none}
+.sbtn-primary{width:100%;background:var(--e);color:#fff;border:none;border-radius:8px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;transition:background .15s;margin-bottom:10px}
+.sbtn-primary:hover{background:var(--blue-mid)}
+.sdivider{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.sdivider::before,.sdivider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.2)}
+.sjoin-row{display:flex;gap:8px;margin-bottom:10px}
+.sjoin-row .sfield{flex:1;margin-bottom:0}
+.sbtn-ghost{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:14px 18px;font-size:16px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.sbtn-ghost:hover{border-color:var(--c);color:var(--c)}
+.serr{color:var(--red);font-size:12px;margin-top:4px;text-align:left;min-height:16px}
+.code-display{display:none;background:rgba(0,60,230,.18);border:1.5px solid rgba(0,60,230,.2);border-radius:10px;padding:16px;margin-bottom:12px;text-align:center}
+.code-lbl{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--c);font-weight:600;margin-bottom:8px}
+.code-val{font-size:42px;font-weight:800;color:#fff;letter-spacing:.12em;font-family:Consolas,monospace}
+
+/* Synthesis modal */
+.s-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.s-overlay.on{display:flex}
+.s-modal{background:#0d1f3c;border:1px solid rgba(255,255,255,.15);border-radius:12px;width:100%;max-width:660px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:rpop .25s ease}
+.s-mhead{background:var(--e);padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
+.s-mhead-title{font-size:15px;font-weight:700;color:#fff}
+.s-mclose{background:rgba(255,255,255,.18);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+.s-mclose:hover{background:rgba(255,255,255,.3)}
+.s-mbody{padding:22px;background:#0d1f3c}
+.s-msec{margin-bottom:18px}
+.s-mlbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--c);margin-bottom:8px}
+.s-mblue{font-size:16px;color:rgba(255,255,255,.88);line-height:1.75;background:rgba(0,60,230,.18);border-left:3px solid var(--e);border-radius:7px;padding:13px 15px}
+.s-mamber{font-size:16px;color:rgba(255,255,255,.88);line-height:1.75;background:rgba(217,119,6,.12);border-left:3px solid var(--amber);border-radius:7px;padding:13px 15px}
+.s-spin-wrap{display:flex;align-items:center;gap:10px;padding:28px 0;justify-content:center;color:var(--on-ink-dim);font-size:13px}
+.s-spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--e);border-radius:50%;animation:srot .7s linear infinite}
+@keyframes srot{to{transform:rotate(360deg)}}
+
+/* Export */
+#s-export{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:#0d1f3c}
+.exp-header{background:var(--e);padding:22px 36px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.exp-header h1{font-size:20px;font-weight:800;color:#fff;margin-bottom:2px}
+.exp-header p{font-size:12px;color:rgba(255,255,255,.6)}
+.exp-body{flex:1;overflow-y:auto;padding:24px 36px;background:#0d1f3c}
+.exp-beh{background:#1a3258;border:1px solid rgba(255,255,255,.15);border-radius:10px;overflow:hidden;margin-bottom:20px}
+.exp-head{background:rgba(0,60,230,.18);padding:11px 16px;font-size:13px;font-weight:700;color:var(--e);display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(0,60,230,.1)}
+.exp-cols{display:grid;grid-template-columns:1fr 1fr}
+.exp-col{padding:12px 16px}
+.exp-col:first-child{border-right:1px solid rgba(255,255,255,.1)}
+.exp-clbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.exp-clbl.g{color:var(--green)}.exp-clbl.r{color:var(--red)}
+.exp-item{font-size:14px;color:rgba(255,255,255,.88);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);line-height:1.45;display:flex;gap:6px}
+.exp-item::before{content:"·";color:rgba(255,255,255,.5);flex-shrink:0}
+.exp-syn{padding:12px 16px;background:rgba(0,60,230,.18);border-top:1px solid rgba(0,60,230,.08)}
+.exp-slbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--c);margin-bottom:6px}
+.exp-stxt{font-size:14px;color:rgba(255,255,255,.88);line-height:1.7}
+.exp-q{padding:12px 16px;background:rgba(217,119,6,.1);border-top:1px solid rgba(217,119,6,.2)}
+.exp-qlbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--amber);margin-bottom:6px}
+.exp-qtxt{font-size:14px;color:rgba(255,255,255,.88);line-height:1.7}
+.exp-footer{padding:16px 36px;background:#0a1628;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:10px;flex-shrink:0}
+.btn-print{background:var(--e);color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-print:hover{background:var(--blue-mid)}
+.btn-back{background:transparent;border:1.5px solid var(--ink-border-mid);color:var(--on-ink-dim);border-radius:8px;padding:11px 18px;font-size:13px;cursor:pointer}
+.btn-back:hover{border-color:var(--c);color:var(--c)}
+
+@media print{.topbar,.sess-tabs,.btmbar,.exp-footer,.s-overlay,.nbtn,.ndots,.np-btn{display:none!important}body{overflow:visible}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+  HOME SCREEN
+══════════════════════════════════════ -->
+<div id="home">
+  <div class="h-header">
+    <img src="data:image/png;base64,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" class="h-logo" alt="TreviPay" class="h-logo">
+    <div class="h-eyebrow">ELT Offsite · Pre-Workshop Primer</div>
+    <h1 class="h-title display display-xl">Building the <em>Operating System</em><br>for Enterprise Scale</h1>
+
+
+  </div>
+  <div class="h-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2rem">
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1.5rem 1.6rem;display:flex;gap:16px;align-items:flex-start">
+        <div style="font-family:var(--pf);font-size:30px;color:var(--c);flex-shrink:0;line-height:1;margin-top:2px">1</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:7px">Context</div>
+          <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:5px">Where We Are</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.5">Greiner's model and TreviPay's current phase</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1.5rem 1.6rem;display:flex;gap:16px;align-items:flex-start">
+        <div style="font-family:var(--pf);font-size:30px;color:var(--c);flex-shrink:0;line-height:1;margin-top:2px">2</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:7px">Diagnosis</div>
+          <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:5px">The Core Tension</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.5">The gap between aspiration and operating reality</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1.5rem 1.6rem;display:flex;gap:16px;align-items:flex-start">
+        <div style="font-family:var(--pf);font-size:30px;color:var(--c);flex-shrink:0;line-height:1;margin-top:2px">3</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:7px">The Shift</div>
+          <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:5px">What Has to Change</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.5">The ELT's role at enterprise scale</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1.5rem 1.6rem;display:flex;gap:16px;align-items:flex-start">
+        <div style="font-family:var(--pf);font-size:30px;color:var(--c);flex-shrink:0;line-height:1;margin-top:2px">4</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:7px">The Behaviors</div>
+          <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:5px">The Six Behaviors</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.5">Non-negotiable operating expectations</div>
+        </div>
+      </div>
+    </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1.5rem 1.6rem;display:flex;gap:16px;align-items:flex-start" onclick="startCourse(21)" style="cursor:pointer">
+        <div style="font-family:var(--pf);font-size:30px;color:var(--teal);flex-shrink:0;line-height:1;margin-top:2px">5</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:7px">The Dir+ Standard</div>
+          <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:5px">From Functional Leader to Enterprise Co-Owner</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.5">What the operating model shift requires of Dir+ leaders</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1.5rem 1.6rem;display:flex;gap:16px;align-items:flex-start" onclick="startCourse(26)" style="cursor:pointer">
+        <div style="font-family:var(--pf);font-size:30px;color:#a78bfa;flex-shrink:0;line-height:1;margin-top:2px">6</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:7px">Accountability Mechanisms</div>
+          <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:5px">What Makes the Change Real</div>
+          <div style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.5">Performance cycle linkage, rewards alignment, and ELT governance</div>
+        </div>
+      </div>
+    </div>
+    <button class="h-begin-btn" onclick="startCourse(0)">Begin Full Experience →</button>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+  COURSE WRAPPER (full-screen)
+══════════════════════════════════════ -->
+<div id="course">
+  <div id="progress"></div>
+  <div id="slide-count"></div>
+  <div id="phase-bar">
+    <img src="data:image/png;base64,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" class="pb-logo" alt="TreviPay">
+    <div class="pb-phases">
+      <div class="pb-seg" id="pb0" onclick="startCourse(0)"><span class="pb-seg-label">Where We Are</span></div>
+      <div class="pb-seg" id="pb1" onclick="startCourse(5)"><span class="pb-seg-label">The Core Tension</span></div>
+      <div class="pb-seg" id="pb2" onclick="startCourse(10)"><span class="pb-seg-label">What Has to Change</span></div>
+      <div class="pb-seg" id="pb3" onclick="startCourse(15)"><span class="pb-seg-label">The Six Behaviors</span></div>
+      <div class="pb-seg" id="pb4" onclick="startCourse(21)"><span class="pb-seg-label">Dir+ Standard</span></div>
+      <div class="pb-seg" id="pb5" onclick="startCourse(26)"><span class="pb-seg-label">Accountability</span></div>
+    </div>
+    <span id="phase-name"></span>
+  </div>
+
+  <!-- ── CHAPTER 1: WHERE WE ARE (slides 0-4) ── -->
+
+  <!-- 1.0 Chapter hero -->
+  <div class="slide bg-blue-grad dot-field center" id="s0">
+    <div class="glow ge" style="width:600px;height:600px;top:-200px;right:-100px;"></div>
+    <div class="glow gc" style="width:400px;height:400px;bottom:-100px;left:-50px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:720px">
+      <div class="overline-white a0">Chapter 1 · Context</div>
+      <h2 class="display display-xl on-blue a1" style="margin-bottom:1rem">Where <em>We Are</em></h2>
+      <div class="rule white rule-sm" style="margin:1.25rem auto;"></div>
+      <p class="lead on-blue a2">Every organization passes through predictable phases of growth. Understanding which phase TreviPay is in — and which is next — is the foundation for everything we'll discuss today.</p>
+    </div>
+  </div>
+
+  <!-- 1.1 Greiner model -->
+  <div class="slide bg-white grid-lines center" id="s1">
+    <div style="width:100%;max-width:960px">
+      <div class="overline a0">Greiner's Growth Model</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">Organizations don't just scale — <em>they evolve</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:640px">Each phase has its own operating logic. And each phase ends in a crisis that forces a shift to the next.</p>
+      <div class="greiner-wrap a3">
+        <div class="gphase past">
+          <div class="gphase-badge">Phase 3 · Past</div>
+          <div class="gphase-title">Delegation</div>
+          <ul class="gphase-items">
+            <li>Execution driven from the top</li>
+            <li>Speed through hierarchy</li>
+            <li>Leaders as decision-makers</li>
+            <li>Functional accountability</li>
+          </ul>
+        </div>
+        <div class="gphase now">
+          <div class="now-badge">▲ We are here</div>
+          <div class="gphase-badge">Phase 4 · Now</div>
+          <div class="gphase-title">Coordination</div>
+          <ul class="gphase-items">
+            <li>Common systems &amp; standards</li>
+            <li>Shared language across functions</li>
+            <li>Leaders as system designers</li>
+            <li>Horizontal coordination</li>
+          </ul>
+        </div>
+        <div class="gphase future">
+          <div class="gphase-badge">Phase 5 · Direction</div>
+          <div class="gphase-title">Collaboration</div>
+          <ul class="gphase-items">
+            <li>Cross-functional teams</li>
+            <li>Peer accountability</li>
+            <li>Shared enterprise outcomes</li>
+            <li>Leaders as culture keepers</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.2 Two dimensions of coordination -->
+  <div class="slide bg-light center" id="s2">
+    <div style="width:100%;max-width:960px">
+      <div class="overline a0">Coordination has two dimensions</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">TreviPay has built one. <em>Not both.</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.75rem;max-width:640px">Coordination isn't just top-down systems and planning cycles. It also requires lateral structures — and those are largely absent.</p>
+      <div class="split2 a3" style="max-width:860px;gap:1.5rem">
+        <div class="card-blue" style="padding:1.75rem">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--c);margin-bottom:.75rem">✓ Present</div>
+          <div style="font-family:var(--pf);font-size:22px;color:var(--c);margin-bottom:.75rem">Vertical Coordination</div>
+          <p class="body-txt">Frameworks, reporting cycles, standards — flowing downward from ELT. Workday, the competency framework, the behavioral profile.</p>
+        </div>
+        <div class="card-amber" style="padding:1.75rem">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:.75rem">✗ Absent</div>
+          <div style="font-family:var(--pf);font-size:22px;color:var(--amber);margin-bottom:.75rem">Horizontal Coordination</div>
+          <p class="body-txt">Cross-functional squads, shared ownership, solving problems at the source. These structures don't yet exist at lower levels.</p>
+        </div>
+      </div>
+      <div class="card-surface a4" style="margin-top:1.25rem;padding:1rem 1.25rem;display:flex;gap:12px;align-items:flex-start;max-width:860px">
+        <div style="font-size:20px;flex-shrink:0">→</div>
+        <p class="body-bright">The result: problems escalate upward instead of being resolved laterally. The ELT becomes the coordination mechanism rather than the designer of one.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.3 What this means -->
+  <div class="slide bg-white center" id="s3">
+    <div style="width:100%;max-width:860px">
+      <div class="overline a0">The implication</div>
+      <h3 class="display display-md a1" style="margin-bottom:1.25rem">You can't skip <em>Coordination</em><br>to get to Collaboration</h3>
+      <div class="compare-row a2" style="margin-bottom:1.25rem">
+        <div class="compare-col bad">
+          <div class="compare-label bad">What looks like Collaboration</div>
+          <div class="compare-item"><div class="ci-dot bad"></div><p>ELT operates with open debate and shared norms</p></div>
+          <div class="compare-item"><div class="ci-dot bad"></div><p>Leaders model peer accountability at the top</p></div>
+          <div class="compare-item"><div class="ci-dot bad"></div><p>Rhetoric rewards breaking silos</p></div>
+        </div>
+        <div class="compare-col good">
+          <div class="compare-label good">What's actually needed first</div>
+          <div class="compare-item"><div class="ci-dot good"></div><p>Horizontal coordination mechanisms below ELT</p></div>
+          <div class="compare-item"><div class="ci-dot good"></div><p>Cross-functional squads solving at the source</p></div>
+          <div class="compare-item"><div class="ci-dot good"></div><p>Systems that reward coordination behavior</p></div>
+        </div>
+      </div>
+      <div class="pull-quote a3">
+        <p>The organization can't skip the phase. The ELT can aspire to Phase 5 — but until Phase 4 is complete, the aspiration creates confusion, not progress.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.4 Reflect -->
+  <div class="slide bg-light center" id="s4">
+    <div class="reflect-card a0" style="max-width:680px">
+      <div class="reflect-icon">💭</div>
+      <div class="reflect-label">Reflection · Chapter 1</div>
+      <div class="reflect-question">Where in your function do cross-functional problems currently get resolved — at the source, or by escalating upward?</div>
+      <div class="reflect-prompts">
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">Think of a specific example from the last 90 days.</div></div>
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">What would it have taken to resolve it without ELT involvement?</div></div>
+      </div>
+      <div class="reflect-cta">No right answer. Hold this thought as we continue.</div>
+    </div>
+  </div>
+
+  <!-- ── CHAPTER 2: THE CORE TENSION (slides 5-9) ── -->
+
+  <!-- 2.0 Chapter hero -->
+  <div class="slide bg-blue-grad dot-field center" id="s5">
+    <div class="glow ge" style="width:600px;height:600px;bottom:-200px;left:-100px;"></div>
+    <div class="glow gc" style="width:400px;height:400px;top:-100px;right:-50px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:720px">
+      <div class="overline-white a0">Chapter 2 · Diagnosis</div>
+      <h2 class="display display-xl on-blue a1" style="margin-bottom:1rem">The <em>Core Tension</em></h2>
+      <div class="rule white rule-sm" style="margin:1.25rem auto;"></div>
+      <p class="lead on-blue a2">TreviPay has a clear aspiration. The problem is not the aspiration — it's that the operating system hasn't caught up to it.</p>
+    </div>
+  </div>
+
+  <!-- 2.1 The gap -->
+  <div class="slide bg-white center" id="s6">
+    <div style="width:100%;max-width:900px">
+      <div class="overline a0">The gap between intention and reality</div>
+      <h3 class="display display-md a1" style="margin-bottom:1.5rem">This is not a <em>commitment problem</em></h3>
+      <div class="a2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.06);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">
+        <div style="background:rgba(0,60,230,.18);padding:22px 22px">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:14px">What we intend</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">Shared ownership</div>
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">Enterprise outcomes</div>
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">Peer accountability</div>
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">Collaboration over function</div>
+          </div>
+        </div>
+        <div style="background:rgba(220,38,38,.12);padding:22px 22px">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#f87171;margin-bottom:14px">What happens in practice</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">ELT resolves conflicts</div>
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">Decisions escalate up</div>
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">Function wins over enterprise</div>
+            <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.45">CEO aligns the team</div>
+          </div>
+        </div>
+        <div style="background:rgba(217,119,6,.1);padding:22px 22px">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;margin-bottom:14px">The gap</div>
+          <div style="font-size:15px;color:var(--on-ink-dim);line-height:1.7">The system rewards coordination behavior while the aspiration points toward collaboration.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2.2 The legitimacy gap -->
+  <div class="slide bg-light center" id="s7">
+    <div style="width:100%;max-width:860px">
+      <div class="overline a0">The legitimacy gap</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">When aspiration <em>outpaces</em> structure</h3>
+      <p class="body-txt a2" style="margin-bottom:1.75rem;max-width:680px">When the ELT models collaborative norms while the organization's formal systems still reward coordination behavior, it creates a gap that middle managers feel most acutely.</p>
+      <div class="a3" style="max-width:860px">
+        <div class="principle-row">
+          <div class="pr-icon">⬆️</div>
+          <div class="pr-body"><h4>Decisions move upward</h4><p>Cross-functional resolution happens at ELT, not through defined roles and processes below.</p></div>
+        </div>
+        <div class="principle-row">
+          <div class="pr-icon">❓</div>
+          <div class="pr-body"><h4>Unclear ownership below ELT</h4><p>Limited clarity on how decisions should be made at the VP and Director layers.</p></div>
+        </div>
+        <div class="principle-row" style="border-bottom:none">
+          <div class="pr-icon">🔄</div>
+          <div class="pr-body"><h4>Trade-offs deferred</h4><p>Reluctance to fully define ownership means ambiguity compounds over time.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2.3 The trust equation -->
+  <div class="slide bg-white center" id="s8">
+    <div style="width:100%;max-width:860px">
+      <div class="overline a0">The Trust Equation</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">Trust is the <em>mechanism</em> of Collaboration</h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:640px">The shift from Coordination to Collaboration requires something that cannot be mandated: peer-to-peer trust. This team's current trust profile reveals exactly where the work is.</p>
+      <div class="split2 a3" style="max-width:860px;gap:1.25rem">
+        <div class="card-blue" style="padding:1.75rem">
+          <div style="font-size:15px;font-weight:700;color:var(--c);margin-bottom:.75rem">Trust = (C + R + I) ÷ Self-Orientation</div>
+          <div class="principle-row" style="padding:.6rem 0">
+            <div class="pr-body"><h4 style="color:var(--green)">✓ High Credibility</h4><p>Trusted for expertise. Every ELT member earns this.</p></div>
+          </div>
+          <div class="principle-row" style="padding:.6rem 0">
+            <div class="pr-body"><h4 style="color:var(--green)">✓ High Reliability</h4><p>Dependable within functional areas. Consistent track record.</p></div>
+          </div>
+          <div class="principle-row" style="padding:.6rem 0;border-bottom:none">
+            <div class="pr-body"><h4 style="color:var(--amber)">⚠ Self-Orientation drag</h4><p>Above-average scores are the primary drag on trustworthiness as a peer group.</p></div>
+          </div>
+        </div>
+        <div class="a4" style="background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);border-radius:12px;padding:1.75rem;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:1rem">Watch-out</div>
+          <p class="body-txt" style="margin-bottom:1rem">Peer trust has relied on a <strong style="color:var(--on-ink);font-weight:600">moderating presence</strong> to broker alignment — rather than being built directly between peers.</p>
+          <p class="body-txt">Collaboration requires trust that works <strong style="color:var(--c);font-weight:600">without a moderator in the room</strong> — and that's exactly what the six behaviors in Chapter 4 are designed to build.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2.4 Reflect -->
+  <div class="slide bg-light center" id="s9">
+    <div class="reflect-card a0" style="max-width:680px">
+      <div class="reflect-icon">💭</div>
+      <div class="reflect-label">Reflection · Chapter 2</div>
+      <div class="reflect-question">Where have you felt the legitimacy gap personally — a moment when the system pulled you one way while the aspiration pointed elsewhere?</div>
+      <div class="reflect-prompts">
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">What did you actually do in that moment?</div></div>
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">What would you do differently with a clearer operating system in place?</div></div>
+      </div>
+      <div class="reflect-cta">No right answer. Hold this thought as we continue.</div>
+    </div>
+  </div>
+
+  <!-- ── CHAPTER 3: WHAT HAS TO CHANGE (slides 10-14) ── -->
+
+  <!-- 3.0 Chapter hero -->
+  <div class="slide bg-blue-grad dot-field center" id="s10">
+    <div class="glow gc" style="width:500px;height:500px;top:-150px;right:-100px;"></div>
+    <div class="glow ge" style="width:450px;height:450px;bottom:-150px;left:-80px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:720px">
+      <div class="overline-white a0">Chapter 3 · The Shift</div>
+      <h2 class="display display-xl on-blue a1" style="margin-bottom:1rem">What Has to <em>Change</em></h2>
+      <div class="rule white rule-sm" style="margin:1.25rem auto;"></div>
+      <p class="lead on-blue a2">Closing the gap doesn't require a new strategy. It requires the ELT to shift its primary activity — from driving execution to designing the system that enables execution.</p>
+    </div>
+  </div>
+
+  <!-- 3.1 The shift -->
+  <div class="slide bg-white center" id="s11">
+    <div style="width:100%;max-width:900px">
+      <div class="overline a0">From execution to architecture</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">The behaviors that created success<br><em>prevent scale</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:680px">Driving execution is what got everyone in this room to where they are. But at enterprise scale, execution-focused leaders become bottlenecks.</p>
+      <div class="a3" style="max-width:900px">
+        <div class="from-to">
+          <div class="ft-item">Driving execution directly</div>
+          <div class="ft-arrow">→</div>
+          <div class="ft-item to">Designing the system that enables execution</div>
+        </div>
+        <div class="from-to">
+          <div class="ft-item">Resolving cross-functional conflicts</div>
+          <div class="ft-arrow">→</div>
+          <div class="ft-item to">Defining how conflicts should be resolved</div>
+        </div>
+        <div class="from-to">
+          <div class="ft-item">Maintaining alignment through involvement</div>
+          <div class="ft-arrow">→</div>
+          <div class="ft-item to">Maintaining alignment through operating discipline</div>
+        </div>
+        <div class="from-to" style="margin-bottom:0">
+          <div class="ft-item">Being the mechanism for coordination</div>
+          <div class="ft-arrow">→</div>
+          <div class="ft-item to">Reinforcing the mechanisms for coordination</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.2 What this unlocks -->
+  <div class="slide bg-light center" id="s12">
+    <div style="width:100%;max-width:900px">
+      <div class="overline a0">What this unlocks</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">Speed at <em>the right level</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.75rem;max-width:600px">When the ELT stops being the coordination mechanism and starts designing one, the whole organization moves faster.</p>
+
+      <!-- Before / After row -->
+      <div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:0;align-items:stretch;margin-bottom:1.5rem" class="a3">
+        <!-- Before -->
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px 0 0 12px;padding:1.5rem 1.75rem;border-right:none">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.9rem">Today</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:6px"></div>
+              <p style="font-size:15px;color:var(--on-ink-dim);line-height:1.55">Decisions wait for ELT availability</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:6px"></div>
+              <p style="font-size:15px;color:var(--on-ink-dim);line-height:1.55">Cross-functional problems escalate upward</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:6px"></div>
+              <p style="font-size:15px;color:var(--on-ink-dim);line-height:1.55">The org moves at ELT's pace</p>
+            </div>
+          </div>
+        </div>
+        <!-- Arrow divider -->
+        <div style="display:flex;align-items:center;justify-content:center;background:rgba(0,212,255,.06);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)">
+          <span style="font-size:18px;color:var(--c)">→</span>
+        </div>
+        <!-- After -->
+        <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.18);border-radius:0 12px 12px 0;padding:1.5rem 1.75rem;border-left:none">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:.9rem;opacity:.8">With the operating system in place</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:6px"></div>
+              <p style="font-size:15px;color:var(--on-ink);line-height:1.55">Decisions made at the right level</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:6px"></div>
+              <p style="font-size:15px;color:var(--on-ink);line-height:1.55">Problems solved at the source</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:6px"></div>
+              <p style="font-size:15px;color:var(--on-ink);line-height:1.55">The org moves at the speed it's capable of</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prerequisite note -->
+      <div class="a4" style="background:rgba(0,60,230,.15);border:1px solid rgba(0,60,230,.3);border-radius:10px;padding:1rem 1.5rem;display:flex;gap:14px;align-items:flex-start;max-width:900px">
+        <div style="font-size:16px;flex-shrink:0;margin-top:1px">🔑</div>
+        <p style="font-size:15px;color:var(--on-ink-dim);line-height:1.65"><strong style="color:var(--on-ink);font-weight:600">The prerequisite:</strong> This shift requires peer-to-peer trust. Without it, handing off coordination creates chaos. The six behaviors in Chapter 4 are what make the trust operational.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.3 The ask -->
+  <div class="slide bg-white center" id="s13">
+    <div style="width:100%;max-width:780px;text-align:center">
+      <div class="overline a0">What this asks of you</div>
+      <h3 class="display display-lg a1" style="margin-bottom:1.25rem">This is not a <em>small ask</em></h3>
+      <p class="lead a2" style="margin-bottom:2rem">You are being asked to change how you operate — not just what you say.</p>
+      <div class="split3 a3" style="text-align:left;max-width:780px">
+        <div style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:1.25rem">
+          <div style="font-size:20px;margin-bottom:.5rem">🔭</div>
+          <div style="font-size:16px;font-weight:600;color:var(--on-ink);margin-bottom:.4rem">Longer time horizon</div>
+          <p class="body-txt" style="font-size:15px">System design pays off over months and quarters, not days.</p>
+        </div>
+        <div style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:1.25rem">
+          <div style="font-size:20px;margin-bottom:.5rem">🤝</div>
+          <div style="font-size:16px;font-weight:600;color:var(--on-ink);margin-bottom:.4rem">Greater vulnerability</div>
+          <p class="body-txt" style="font-size:15px">Trusting peers to make decisions you would have made yourself.</p>
+        </div>
+        <div style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:1.25rem">
+          <div style="font-size:20px;margin-bottom:.5rem">🏗</div>
+          <div style="font-size:16px;font-weight:600;color:var(--on-ink);margin-bottom:.4rem">Less visible impact</div>
+          <p class="body-txt" style="font-size:15px">Designing systems is quieter than driving execution.</p>
+        </div>
+      </div>
+      <p class="body-txt a4" style="margin-top:1.5rem;max-width:560px;margin-left:auto;margin-right:auto">And yet — this is exactly what is required to build the kind of enterprise that TreviPay is capable of becoming.</p>
+    </div>
+  </div>
+
+  <!-- 3.4 Reflect -->
+  <div class="slide bg-light center" id="s14">
+    <div class="reflect-card a0" style="max-width:680px">
+      <div class="reflect-icon">💭</div>
+      <div class="reflect-label">Reflection · Chapter 3</div>
+      <div class="reflect-question">What is one thing you currently do that keeps you in execution mode — and what would it look like to systematize or hand it off?</div>
+      <div class="reflect-prompts">
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">Be specific — name the activity, not the category.</div></div>
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">What would need to be true for you to trust someone else to own it?</div></div>
+      </div>
+      <div class="reflect-cta">No right answer. Hold this thought as we continue.</div>
+    </div>
+  </div>
+
+
+  <!-- ── NORMS BRIDGE (slide 15) ── -->
+  <div class="slide bg-white center" id="s15">
+    <div class="glow ge" style="width:400px;height:400px;top:-80px;right:-60px;"></div>
+    <div style="position:relative;z-index:1;width:100%;max-width:900px">
+      <div class="overline a0">Before we name what changes</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">We've already aligned on <em>how</em> we lead</h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:680px;margin-left:auto;margin-right:auto">The ELT norms haven't changed. They describe the character and values underneath every decision. What changes is what we structurally commit to do with them at this stage of the organization's growth.</p>
+      <div class="a3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.875rem;max-width:900px;margin:0 auto 1.5rem">
+        <div style="background:rgba(0,60,230,.12);border:1px solid rgba(0,60,230,.25);border-radius:12px;padding:1.1rem 1.25rem;display:flex;gap:10px;align-items:flex-start">
+          <div style="font-size:20px;flex-shrink:0">⭐</div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--on-ink);margin-bottom:3px">It Begins With Us</div><div style="font-size:12.5px;color:var(--on-ink-dim);line-height:1.5">We hold ourselves to the standard before holding the organization to it.</div></div>
+        </div>
+        <div style="background:rgba(0,60,230,.12);border:1px solid rgba(0,60,230,.25);border-radius:12px;padding:1.1rem 1.25rem;display:flex;gap:10px;align-items:flex-start">
+          <div style="font-size:20px;flex-shrink:0">💛</div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--on-ink);margin-bottom:3px">Lead with Empathy</div><div style="font-size:12.5px;color:var(--on-ink-dim);line-height:1.5">We assume positive intent and seek to understand.</div></div>
+        </div>
+        <div style="background:rgba(0,60,230,.12);border:1px solid rgba(0,60,230,.25);border-radius:12px;padding:1.1rem 1.25rem;display:flex;gap:10px;align-items:flex-start">
+          <div style="font-size:20px;flex-shrink:0">🎯</div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--on-ink);margin-bottom:3px">Clarity Over Complexity</div><div style="font-size:12.5px;color:var(--on-ink-dim);line-height:1.5">We share the why behind decisions with concise, clear communication.</div></div>
+        </div>
+        <div style="background:rgba(0,60,230,.12);border:1px solid rgba(0,60,230,.25);border-radius:12px;padding:1.1rem 1.25rem;display:flex;gap:10px;align-items:flex-start">
+          <div style="font-size:20px;flex-shrink:0">🌱</div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--on-ink);margin-bottom:3px">Give Grace</div><div style="font-size:12.5px;color:var(--on-ink-dim);line-height:1.5">We operate from trust and treat mistakes as opportunities to learn and improve.</div></div>
+        </div>
+        <div style="background:rgba(0,60,230,.12);border:1px solid rgba(0,60,230,.25);border-radius:12px;padding:1.1rem 1.25rem;display:flex;gap:10px;align-items:flex-start;grid-column:2/3">
+          <div style="font-size:20px;flex-shrink:0">🚀</div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--on-ink);margin-bottom:3px">Empower Others</div><div style="font-size:12.5px;color:var(--on-ink-dim);line-height:1.5">We value ingenuity and let others solve problems rather than solving them for them.</div></div>
+        </div>
+      </div>
+      <div class="a4" style="background:rgba(0,60,230,.08);border-left:3px solid var(--e);padding:1rem 1.25rem;border-radius:0 10px 10px 0;max-width:860px;margin:0 auto">
+        <p style="font-family:var(--pf);font-size:18px;font-style:italic;color:var(--on-ink);line-height:1.6">The norms are the <em>how</em>. What follows are the <em>what</em> — six operating behaviors that put our norms to work at enterprise scale.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHAPTER 4: THE SIX BEHAVIORS (slides 16-20) ── -->
+
+  <!-- 4.0 Chapter hero -->
+  <div class="slide bg-blue-grad dot-field center" id="s16">
+    <div class="glow ge" style="width:500px;height:500px;top:-100px;left:-100px;"></div>
+    <div class="glow gc" style="width:450px;height:450px;bottom:-100px;right:-80px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:720px">
+      <div class="overline-white a0">Chapter 4 · The Behaviors</div>
+      <h2 class="display display-xl on-blue a1" style="margin-bottom:1rem">The <em>Six Behaviors</em></h2>
+      <div class="rule white rule-sm" style="margin:1.25rem auto;"></div>
+      <p class="lead on-blue a2">Not values. Not aspirations. Operating expectations — observable, enforceable, and non-negotiable at this level of the organization.</p>
+    </div>
+  </div>
+
+  <!-- 4.1 The behaviors -->
+  <div class="slide bg-white center" id="s17">
+    <div style="width:100%;max-width:960px">
+      <div class="overline a0">Six enterprise operating behaviors</div>
+      <h3 class="display display-md a1" style="margin-bottom:1.25rem">Each one has a <em>structural purpose</em></h3>
+      <div class="behavior-grid a2">
+        <div class="bcard sc0">
+          <div class="bcard-icon">🎯</div>
+          <div><div class="bcard-num">01</div><div class="bcard-title">Clear Decision Ownership</div><div class="bcard-desc">Every decision has a named owner. Accountability for process, outcome, and communication.</div></div>
+        </div>
+        <div class="bcard sc1">
+          <div class="bcard-icon">🤝</div>
+          <div><div class="bcard-num">02</div><div class="bcard-title">Peer-to-Peer Resolution</div><div class="bcard-desc">Cross-functional issues resolved directly with peers — escalations are rare and reserved for enterprise-critical issues.</div></div>
+        </div>
+        <div class="bcard sc2">
+          <div class="bcard-icon">🏛</div>
+          <div><div class="bcard-num">03</div><div class="bcard-title">Enterprise-First Trade-offs</div><div class="bcard-desc">Decisions explicitly identify trade-offs. Enterprise outcomes over functional optimization.</div></div>
+        </div>
+        <div class="bcard sc0">
+          <div class="bcard-icon">✅</div>
+          <div><div class="bcard-num">04</div><div class="bcard-title">Decision Commitment</div><div class="bcard-desc">Once decided, the team aligns and executes — even if they initially disagreed.</div></div>
+        </div>
+        <div class="bcard sc1">
+          <div class="bcard-icon">🔗</div>
+          <div><div class="bcard-num">05</div><div class="bcard-title">Early Cross-Functional Engagement</div><div class="bcard-desc">Relevant stakeholders included early — before direction is set, not after.</div></div>
+        </div>
+        <div class="bcard sc2">
+          <div class="bcard-icon">📣</div>
+          <div><div class="bcard-num">06</div><div class="bcard-title">Shared Accountability</div><div class="bcard-desc">Misalignment addressed directly, in real time. Silence is not alignment.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4.2 Why these six -->
+  <div class="slide bg-light center" id="s18">
+    <div style="width:100%;max-width:860px">
+      <div class="overline a0">Why these six — not others</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">Each behavior closes a <em>specific gap</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:640px">These weren't chosen as values. They were chosen because they directly address the three patterns sustaining the legitimacy gap.</p>
+      <div class="split3 a3">
+        <div class="card-surface" style="padding:1.25rem">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.6rem">Pattern 1</div>
+          <div style="font-size:16px;font-weight:600;color:var(--on-ink);margin-bottom:.5rem">Decisions move upward</div>
+          <p class="body-txt" style="font-size:15px;margin-bottom:.75rem">Behaviors 01, 02, and 04 directly address this — by requiring named owners, peer resolution, and commitment to outcomes.</p>
+        </div>
+        <div class="card-surface" style="padding:1.25rem">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.6rem">Pattern 2</div>
+          <div style="font-size:16px;font-weight:600;color:var(--on-ink);margin-bottom:.5rem">Unclear ownership below ELT</div>
+          <p class="body-txt" style="font-size:15px;margin-bottom:.75rem">Behavior 03 addresses this directly — by requiring trade-offs to be made explicit and enterprise outcomes to be named.</p>
+        </div>
+        <div class="card-surface" style="padding:1.25rem">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.6rem">Pattern 3</div>
+          <div style="font-size:16px;font-weight:600;color:var(--on-ink);margin-bottom:.5rem">Trade-offs deferred</div>
+          <p class="body-txt" style="font-size:15px;margin-bottom:.75rem">Behaviors 05 and 06 close this — by requiring early engagement and real-time accountability for misalignment.</p>
+        </div>
+      </div>
+      <div class="card-blue a4" style="padding:1.25rem;margin-top:1rem;max-width:860px">
+        <p class="body-bright"><strong>What comes next:</strong> In the workshop, your team will define what each behavior actually looks like in TreviPay's context — and what it doesn't. Your definitions, not prescribed ones.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4.3 Reflect -->
+  <div class="slide bg-light center" id="s19">
+    <div class="reflect-card a0" style="max-width:680px">
+      <div class="reflect-icon">💭</div>
+      <div class="reflect-label">Reflection · Chapter 4</div>
+      <div class="reflect-question">Which of the six behaviors do you find most natural — and which would require the most change in how you currently operate?</div>
+      <div class="reflect-prompts">
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">Be honest with yourself. The workshop will surface it anyway.</div></div>
+        <div class="reflect-prompt"><div class="rp-dot"></div><div class="rp-text">What would others on this team say about your answer?</div></div>
+      </div>
+      <div class="reflect-cta">Hold this thought. You're about to define these behaviors together.</div>
+    </div>
+  </div>
+
+  <!-- 4.4 Summary / transition into workshop -->
+  <div class="slide bg-blue-grad dot-field center" id="s20">
+    <div class="glow ge" style="width:600px;height:600px;top:-150px;right:-100px;"></div>
+    <div class="glow gc" style="width:500px;height:500px;bottom:-150px;left:-80px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:620px">
+      <div class="overline-white a0">You're ready</div>
+      <h2 class="display display-lg on-blue a1" style="margin-bottom:1rem">Now let's define what <em>great</em> looks like — together</h2>
+      <div class="rule white rule-sm" style="margin:1.25rem auto"></div>
+      <p class="lead on-blue a2" style="margin-bottom:2rem">Your words. Your definitions. AI synthesizes what the group captures and surfaces questions to go deeper.</p>
+      <div class="glass-c a3" style="padding:1.25rem 1.5rem;border-radius:14px;text-align:left">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--c);margin-bottom:.6rem">How it works</div>
+        <p style="font-size:15px;color:rgba(255,255,255,.88);line-height:1.65">Each person joins on their device with a session code. Work through all six behaviors together — when a behavior is complete, AI synthesizes the group's responses and surfaces discussion questions.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── CHAPTER 5: DIR+ STANDARD (slides 20-24) ── -->
+
+  <!-- 5.0 Chapter hero -->
+  <div class="slide bg-teal-grad dot-field center" id="s21">
+    <div class="glow gt" style="width:600px;height:600px;top:-200px;right:-100px;"></div>
+    <div class="glow ge" style="width:400px;height:400px;bottom:-100px;left:-50px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:720px">
+      <div class="overline-white a0">Chapter 5 · The Dir+ Standard</div>
+      <h2 class="display display-xl a1" style="margin-bottom:1rem">From Functional Leader<br>to <em>Enterprise Co-Owner</em></h2>
+      <div class="rule teal rule-sm" style="margin:1.25rem auto;"></div>
+      <p class="lead a2">The ELT can't lead differently without the layer below evolving alongside. This chapter is about what that evolution looks like — and what we're asking Dir+ leaders to become.</p>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 1: THE IDENTITY SHIFT ── -->
+  <div class="slide bg-white center" id="s22">
+    <div style="width:100%;max-width:900px;text-align:left">
+      <div class="overline-teal a0">The core ask</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">This is an <em>identity shift</em> — not a skills gap</h3>
+      <p class="body-txt a2" style="margin-bottom:1.75rem;max-width:680px;margin-left:auto;margin-right:auto">The most significant leadership transition in a career is when a functional leader stops optimizing for their domain and starts co-owning enterprise outcomes. TreviPay has never named that shift clearly. This is us naming it.</p>
+      <div class="a3" style="max-width:900px">
+        <div class="principle-row">
+          <div class="pr-icon">🏛</div>
+          <div class="pr-body"><h4>Your function is your domain — not your identity</h4><p>Dir+ leaders are expected to advocate for enterprise outcomes first, and bring their functional expertise to that work — not the other way around.</p></div>
+        </div>
+        <div class="principle-row">
+          <div class="pr-icon">🤝</div>
+          <div class="pr-body"><h4>Peer accountability is part of the job</h4><p>Naming misalignment directly — with the person, not around them — is an operating expectation at this level, not a personality trait.</p></div>
+        </div>
+        <div class="principle-row" style="border-bottom:none">
+          <div class="pr-icon">📈</div>
+          <div class="pr-body"><h4>The measure changes</h4><p>A Dir+ leader who delivers functional results but leaves no stronger leaders behind — and whose team creates escalation dependency — has not fully done the job.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 2: SIX BEHAVIORAL SHIFTS ── -->
+  <div class="slide bg-light center" id="s23">
+    <div style="width:100%;max-width:900px;text-align:left">
+      <div class="overline-teal a0">What changes in practice</div>
+      <h3 class="display display-md a1" style="margin-bottom:1.25rem">Six behavioral shifts — <em>observable and specific</em></h3>
+      <div class="a2" style="width:100%;max-width:900px">
+        <div class="from-to">
+          <div class="ft-item">Resolving cross-functional conflicts by pulling in the ELT</div>
+          <div class="ft-arrow-teal">→</div>
+          <div class="ft-item to-teal">Working it out directly with the relevant peer first</div>
+        </div>
+        <div class="from-to">
+          <div class="ft-item">Optimizing for your function's metrics and resource needs</div>
+          <div class="ft-arrow-teal">→</div>
+          <div class="ft-item to-teal">Naming trade-offs explicitly and prioritizing the enterprise outcome</div>
+        </div>
+        <div class="from-to">
+          <div class="ft-item">Engaging peers after a recommendation is already formed</div>
+          <div class="ft-arrow-teal">→</div>
+          <div class="ft-item to-teal">Bringing relevant functions in before direction is set</div>
+        </div>
+        <div class="from-to">
+          <div class="ft-item">Cascading enterprise decisions with personal distance or hedging</div>
+          <div class="ft-arrow-teal">→</div>
+          <div class="ft-item to-teal">Cascading with fidelity — disagreement belongs in the room, not after it</div>
+        </div>
+        <div class="from-to">
+          <div class="ft-item">Staying quiet on misalignment to preserve relationships</div>
+          <div class="ft-arrow-teal">→</div>
+          <div class="ft-item to-teal">Naming it directly — with the person, not around them</div>
+        </div>
+        <div class="from-to" style="margin-bottom:0">
+          <div class="ft-item">Developing your own team as a management task</div>
+          <div class="ft-arrow-teal">→</div>
+          <div class="ft-item to-teal">Owning the leadership pipeline as a strategic obligation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 3: THE COMPETENCY FRAMEWORK ── -->
+  <div class="slide bg-white center" id="s24">
+    <div style="width:100%;max-width:960px">
+      <div class="overline-teal a0">The development framework</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">7 competencies — <em>three levels deep</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.25rem;max-width:680px">For each competency, the Dir+ Behavioral Reference Guide shows what demonstrating it actually looks like — at Director, Sr. Director, and VP — with specific, observable behavioral indicators.</p>
+      <div class="comp-grid a3">
+        <div class="ccard">
+          <div>
+            <div class="ccard-num">01</div>
+            <div class="ccard-title">Produce Results</div>
+            <div class="ccard-desc">From personal execution to designing the systems that drive performance at scale.</div>
+          </div>
+        </div>
+        <div class="ccard">
+          <div>
+            <div class="ccard-num">02</div>
+            <div class="ccard-title">Emotional Intelligence</div>
+            <div class="ccard-desc">Reading and shaping the emotional climate of the organization — not just managing your own.</div>
+          </div>
+        </div>
+        <div class="ccard">
+          <div>
+            <div class="ccard-num">03</div>
+            <div class="ccard-title">Grows Relationships</div>
+            <div class="ccard-desc">Relationships as a strategic capability — not a soft skill.</div>
+          </div>
+        </div>
+        <div class="ccard">
+          <div>
+            <div class="ccard-num">04</div>
+            <div class="ccard-title">Builds Trust</div>
+            <div class="ccard-desc">Making trust structural — not dependent on any one individual's character.</div>
+          </div>
+        </div>
+        <div class="ccard">
+          <div>
+            <div class="ccard-num">05</div>
+            <div class="ccard-title">Develops Others</div>
+            <div class="ccard-desc">Leadership development as a strategic obligation — the pipeline is a business asset.</div>
+          </div>
+        </div>
+        <div class="ccard new-comp sc2">
+          <div>
+            <div class="ccard-num" style="color:var(--teal);opacity:1">06</div>
+            <div class="ccard-title">Thinks Strategically</div>
+            <div class="ccard-desc">Owning a strategic perspective — not just executing against one.</div>
+            <div class="ccard-new-badge">★ New competency</div>
+          </div>
+        </div>
+        <div class="ccard new-comp sc3" style="grid-column:1/-1;max-width:435px">
+          <div>
+            <div class="ccard-num" style="color:var(--teal);opacity:1">07</div>
+            <div class="ccard-title">Champions Inclusion</div>
+            <div class="ccard-desc">Inclusion as a leadership discipline — showing up in structural decisions, not values statements.</div>
+            <div class="ccard-new-badge">★ New competency</div>
+          </div>
+        </div>
+      </div>
+      <p class="a4" style="font-size:13px;color:rgba(255,255,255,.4);margin-top:.75rem;font-style:italic">★ New competencies added to close benchmark gaps vs DDI, CCL, and Korn Ferry</p>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 4: DISCUSSION / SPONSORSHIP ── -->
+  <div class="slide bg-light center" id="s25">
+    <div class="reflect-card-teal a0" style="max-width:720px">
+      <div class="reflect-icon">🎯</div>
+      <div class="reflect-label-teal">Discussion · Chapter 5</div>
+      <div class="reflect-question">This is a recommendation. Does the standard we're setting for Dir+ leaders reflect the enterprise we're trying to build?</div>
+      <div class="reflect-prompts">
+        <div class="reflect-prompt"><div class="rp-dot-teal"></div><div class="rp-text">Is anything missing? Is anything wrong?</div></div>
+        <div class="reflect-prompt"><div class="rp-dot-teal"></div><div class="rp-text">When you leave this room, what will you say to your Directors in week one?</div></div>
+        <div class="reflect-prompt"><div class="rp-dot-teal"></div><div class="rp-text">What does your role as sponsor of this standard actually require of you?</div></div>
+      </div>
+      <div class="reflect-cta-teal">Your fingerprints on this framework make you a sponsor — not a recipient.</div>
+    </div>
+  </div>
+
+  <!-- ── CHAPTER 6: ACCOUNTABILITY MECHANISMS (slides 25-33) ── -->
+
+  <!-- 6.0 Chapter hero -->
+  <div class="slide bg-purple-grad dot-field center" id="s26">
+    <div class="glow gp" style="width:600px;height:600px;top:-200px;right:-100px;"></div>
+    <div class="glow gc" style="width:400px;height:400px;bottom:-100px;left:-50px;"></div>
+    <div style="position:relative;z-index:1;text-align:center;max-width:720px">
+      <div class="overline-white a0">Chapter 6 · Accountability Mechanisms</div>
+      <h2 class="display display-xl a1" style="margin-bottom:1rem">What Makes the<br><em>Change Real</em></h2>
+      <div class="rule purple rule-sm" style="margin:1.25rem auto;"></div>
+      <p class="lead a2">We've agreed on what needs to change and what that requires of Dir+ leaders. This chapter names what makes it stick — the structural mechanisms that translate agreement into accountability.</p>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 1: WHY MECHANISMS MATTER ── -->
+  <div class="slide bg-white center" id="s27">
+    <div style="width:100%;max-width:900px;text-align:left">
+      <div class="overline-purple a0">The honest assessment</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">We haven't done a good job of<br><em>changing behavior without structure</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.75rem;max-width:680px">This is not a critique. It's a pattern that's true of every organization at this stage — and being honest about it is what makes the accountability mechanisms credible rather than punitive.</p>
+      <div class="a3" style="max-width:900px">
+        <div class="principle-row">
+          <div class="pr-icon">📋</div>
+          <div class="pr-body"><h4>Stated expectations without measurement don't change behavior</h4><p>Dir+ leaders need to know what the bar is before they're measured against it. These mechanisms give clarity — not surprise.</p></div>
+        </div>
+        <div class="principle-row">
+          <div class="pr-icon">🔗</div>
+          <div class="pr-body"><h4>How we reward shapes behavior more reliably than culture statements</h4><p>Aligning rewards to behavioral expectations signals that this is a business priority — not a People & Culture initiative.</p></div>
+        </div>
+        <div class="principle-row" style="border-bottom:none">
+          <div class="pr-icon">⚖️</div>
+          <div class="pr-body"><h4>Accountability without clarity is unfair. Clarity without accountability is ineffective.</h4><p>These two mechanisms together close both gaps simultaneously.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 2: THE TWO MECHANISMS ── -->
+  <div class="slide bg-light center" id="s28">
+    <div style="width:100%;max-width:900px;text-align:left">
+      <div class="overline-purple a0">Two accountability levers</div>
+      <h3 class="display display-md a1" style="margin-bottom:1.25rem">Structural — not <em>personal</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.25rem;max-width:680px">Both mechanisms treat behavioral expectations as a business standard — the same way financial performance targets are treated. This is how trust in the system gets built.</p>
+      <div class="mech-row a3">
+        <div class="mcard perf">
+          <div>
+            <div class="mcard-label">Mechanism 01</div>
+            <div class="mcard-title">Performance Cycle Linkage</div>
+          </div>
+          <div class="mcard-body">Enterprise operating behaviors become a formal evaluation component for all Dir+ leaders at the next performance cycle.</div>
+          <div class="mcard-detail">
+            <div class="mcard-item"><div class="mcard-dot"></div><p>The expectation begins now — not at the next review</p></div>
+            <div class="mcard-item"><div class="mcard-dot"></div><p>This is a launch, not a development runway</p></div>
+            <div class="mcard-item"><div class="mcard-dot"></div><p>Perfection is not the goal — put these behaviors into practice, don't develop them</p></div>
+          </div>
+        </div>
+        <div class="mcard bonus">
+          <div>
+            <div class="mcard-label">Mechanism 02</div>
+            <div class="mcard-title">Rewards Alignment</div>
+          </div>
+          <div class="mcard-body">How we reward Dir+ leaders will reflect what we now expect of them — behavioral accountability alongside functional outcomes.</div>
+          <div class="mcard-detail">
+            <div class="mcard-item"><div class="mcard-dot"></div><p>Rewards signal what the organization actually values</p></div>
+            <div class="mcard-item"><div class="mcard-dot"></div><p>Behavioral expectations without rewards alignment create mixed signals</p></div>
+            <div class="mcard-item"><div class="mcard-dot"></div><p>How we lead is as important as what we deliver</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 3: REWARDS — WHAT'S CHANGING ── -->
+  <div class="slide bg-white center" id="s29">
+    <div style="width:100%;max-width:900px;text-align:left">
+      <div class="overline-purple a0">What rewards alignment means in practice</div>
+      <h3 class="display display-md a1" style="margin-bottom:.75rem">The bonus policy is <em>changing</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:680px">This is a business decision — not a P&C initiative. Behavioral expectations at the executive level will be formally linked to how Dir+ leaders are compensated. The CEO owns this change.</p>
+      <div class="a3" style="max-width:900px">
+        <div class="principle-row">
+          <div class="pr-icon">📎</div>
+          <div class="pr-body"><h4>Enterprise operating behaviors become a bonus component</h4><p>The six behaviors agreed today — and the Dir+ expectations the ELT co-designed — will be factored into the next compensation cycle alongside functional performance.</p></div>
+        </div>
+        <div class="principle-row">
+          <div class="pr-icon">🎯</div>
+          <div class="pr-body"><h4>This applies at the Dir+ level — not just the executive layer</h4><p>The expectation cascades to the leaders this room is now sponsoring. The standard we set today is the standard they'll be measured against.</p></div>
+        </div>
+        <div class="principle-row" style="border-bottom:none">
+          <div class="pr-icon">📣</div>
+          <div class="pr-body"><h4>Leaders deserve to know the bar before they're measured against it</h4><p>The expectation begins now. The rollout mid-June is not a surprise — it's the signal that the work has already started.</p></div>
+        </div>
+      </div>
+      <div class="pull-quote a4" style="margin-top:1.25rem">
+        <p>This isn't about compliance. It's about making the signal clear enough that the right behavior becomes the rational choice.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 4: PERFORMANCE DISTRIBUTION MODEL ── -->
+  <div class="slide bg-light center" id="s30">
+    <div style="width:100%;max-width:960px;text-align:left">
+      <div class="overline-purple a0">How performance is assessed</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">Dir+ assessed as a <em>stand-alone group</em> — not within functions</h3>
+      <p class="body-txt a2" style="margin-bottom:1.25rem;max-width:680px">Cross-functional calibration means a Director in one function is measured against the same standard as a Director in any other. The enterprise standard applies equally — not locally.</p>
+      <div class="a3" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:960px">
+
+        <!-- Distribution framework -->
+        <div style="background:rgba(92,77,214,.15);border:1px solid var(--purple-border);border-radius:14px;padding:1.5rem;display:flex;flex-direction:column">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:.5rem">Performance Distribution</div>
+          <div style="font-family:var(--pf);font-size:18px;color:var(--on-ink);margin-bottom:1rem">Mandatory 5/10/50/20/10 framework</div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex:1;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;text-align:right;font-size:13px;font-weight:700;color:#a78bfa;flex-shrink:0">5%</div>
+              <div style="width:5%;min-width:6px;height:36px;background:rgba(220,38,38,.6);border-radius:4px"></div>
+              <div style="font-size:14px;color:var(--on-ink-dim)">Bottom performers</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;text-align:right;font-size:13px;font-weight:700;color:#a78bfa;flex-shrink:0">10%</div>
+              <div style="width:10%;height:36px;background:rgba(217,119,6,.6);border-radius:4px"></div>
+              <div style="font-size:14px;color:var(--on-ink-dim)">Below expectations</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;text-align:right;font-size:13px;font-weight:700;color:#a78bfa;flex-shrink:0">50%</div>
+              <div style="width:50%;height:36px;background:rgba(0,60,230,.65);border-radius:4px"></div>
+              <div style="font-size:14px;color:var(--on-ink-dim)">Meets expectations</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;text-align:right;font-size:13px;font-weight:700;color:#a78bfa;flex-shrink:0">20%</div>
+              <div style="width:20%;height:36px;background:rgba(5,150,105,.65);border-radius:4px"></div>
+              <div style="font-size:14px;color:var(--on-ink-dim)">Strong performance</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;text-align:right;font-size:13px;font-weight:700;color:#a78bfa;flex-shrink:0">10%</div>
+              <div style="width:10%;height:36px;background:rgba(0,212,255,.55);border-radius:4px"></div>
+              <div style="font-size:14px;color:var(--on-ink-dim)">Top performers</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bar goes up -->
+        <div style="display:flex;flex-direction:column;gap:.875rem">
+          <div style="background:rgba(255,255,255,.06);border:1px solid var(--ink-border-mid);border-radius:14px;padding:1.25rem">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:.4rem">Rising Bar</div>
+            <div style="font-size:15px;font-weight:600;color:var(--on-ink);margin-bottom:.4rem">The bar goes up each year</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">Yesterday's "meets expectations" becomes tomorrow's baseline. Every cycle, the threshold for each tier rises — forcing continuous elevation of the Dir+ population.</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border:1px solid var(--ink-border-mid);border-radius:14px;padding:1.25rem">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:.4rem">Evidence-Based Ratings</div>
+            <div style="font-size:15px;font-weight:600;color:var(--on-ink);margin-bottom:.4rem">Gut feel is not a rating</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">Every Dir+ rating requires evidence demonstrating performance against role expectations and prior year performance. Written rationale retained in Workday.</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border:1px solid var(--ink-border-mid);border-radius:14px;padding:1.25rem">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:.4rem">Acceptable Reward Ranges</div>
+            <div style="font-size:15px;font-weight:600;color:var(--on-ink);margin-bottom:.4rem">Clear guidelines per performance level</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">Defined award ranges for merit and bonus by rating tier. Justification required for any variance. Any distribution where all awards fall within 10% of each other is automatically flagged by P&C.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 5: CHECKS & BALANCES ── -->
+  <div class="slide bg-white center" id="s31">
+    <div style="width:100%;max-width:960px;text-align:left">
+      <div class="overline-purple a0">Checks &amp; balances</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">Preventing <em>inflation and compression</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.25rem;max-width:680px">Two sets of guardrails — one for rating integrity, one for award differentiation. Both are structural, not advisory.</p>
+      <div class="a3" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:960px">
+
+        <div style="background:rgba(0,60,230,.12);border:1px solid rgba(0,60,230,.3);border-radius:14px;padding:1.5rem">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);margin-bottom:.75rem">📐 Rating Integrity</div>
+          <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Preventing artificial inflation &amp; compression</div>
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--e);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Mandatory distribution curve</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">Ratings must reflect a spread consistent with the 5/10/50/20/10 framework.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--e);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Evidence-based ratings</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">Every Dir+ rating requires documented evidence. Gut feel is not a rating.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--e);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">PCBP review before calibration</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">PCBPs discuss all ratings with SVP prior to calibration and push back on bias.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--e);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Stand-alone Dir+ calibration</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">Dir+ population assessed as its own group — cross-functional focus on level expectations and how results are achieved.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(92,77,214,.12);border:1px solid var(--purple-border);border-radius:14px;padding:1.5rem">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:.75rem">🎯 Award Differentiation</div>
+          <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Preventing peanut-buttering of the pool</div>
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Acceptable reward ranges by rating</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">Clear guidelines for merit and bonus by tier. Justification required for any variance.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Named rationale for outliers</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">Written justification required for every individual in the top and bottom tier. Retained in Workday.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Variance floor</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">Any distribution where all awards fall within 10% of each other is automatically flagged by P&C before submission.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+              <div><div style="font-size:14px;font-weight:600;color:var(--on-ink);margin-bottom:2px">Rating-to-award alignment check</div><div style="font-size:13px;color:var(--on-ink-dim);line-height:1.5">P&C validates award levels are directionally consistent with ratings. Misalignment requires written explanation.</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 6: ELT CALIBRATION GOVERNANCE ── -->
+  <div class="slide bg-light center" id="s32">
+    <div style="width:100%;max-width:900px;text-align:left">
+      <div class="overline-purple a0">Executive calibration · Director+ only</div>
+      <h3 class="display display-md a1" style="margin-bottom:.5rem">ELT reviews <em>every</em> Dir+ rating and award</h3>
+      <p class="body-txt a2" style="margin-bottom:1.25rem;max-width:680px">Before any Director+ outcome is finalized — full ELT review, cross-functional visibility, collective sign-off. Final ratings and awards approved by CEO.</p>
+      <div class="a3" style="max-width:900px;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+        <div style="background:rgba(92,77,214,.15);border:1px solid var(--purple-border);border-radius:14px;padding:1.5rem;display:flex;flex-direction:column;gap:.875rem">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa">The four steps</div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">Each executive presents their Dir+ ratings and award distribution with <strong style="color:var(--on-ink)">named rationale</strong></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">Peer executives may <strong style="color:var(--on-ink)">challenge any rating or award</strong> where cross-functional evidence contradicts it</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">P&C flags any distribution failing to meet guidelines before the session — <strong style="color:var(--on-ink)">no flat distributions enter unchallenged</strong></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.55">Final ratings and awards <strong style="color:var(--on-ink)">approved by CEO</strong> — adjusted to meet guidelines if the team fails to do so on their own</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:.875rem">
+          <div style="background:rgba(255,255,255,.06);border:1px solid var(--ink-border-mid);border-radius:14px;padding:1.25rem">
+            <div style="font-size:12px;font-weight:700;color:#a78bfa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Scope</div>
+            <div style="font-size:15px;color:var(--on-ink);font-weight:600;margin-bottom:.25rem">Director &amp; Above · FY 2026</div>
+            <div style="font-size:13px;color:var(--on-ink-dim)">100% Discretionary Bonus model. Executive Calibration Required.</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border:1px solid var(--ink-border-mid);border-radius:14px;padding:1.25rem">
+            <div style="font-size:12px;font-weight:700;color:#a78bfa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Why this matters</div>
+            <div style="font-size:14px;color:var(--on-ink-dim);line-height:1.6">Cross-functional visibility means a Chief can see — and challenge — how a Director in another function is being rated. Functional protection of underperformers becomes visible and accountable.</div>
+          </div>
+          <div style="background:rgba(92,77,214,.2);border:1px solid var(--purple-border);border-radius:14px;padding:1.25rem">
+            <div style="font-family:var(--pf);font-size:16px;color:var(--on-ink);font-style:italic;line-height:1.5">Differentiation is a leadership act.<br>The process must make it unavoidable.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <div class="slide bg-light center" id="s33">
+    <div style="width:100%;max-width:860px;text-align:left">
+      <div class="overline-purple a0">The logic of this session</div>
+      <h3 class="display display-md a1" style="margin-bottom:1.25rem">Three premises. <em>One conclusion.</em></h3>
+      <p class="body-txt a2" style="margin-bottom:1.5rem;max-width:680px">This session was built on a deliberate sequence. Each premise was agreed before the next was introduced. The accountability mechanisms are the logical conclusion — not a new ask.</p>
+      <div class="premise-chain a3">
+        <div class="premise-item">
+          <div class="premise-num">
+            <div class="premise-circle">1</div>
+            <div class="premise-line"></div>
+          </div>
+          <div class="premise-body">
+            <div class="premise-head">We need to scale — enterprise leadership is required</div>
+            <div class="premise-sub">Agreed in Chapters 1–3. The organization cannot scale without leaders who operate as enterprise co-owners, not functional advocates.</div>
+          </div>
+        </div>
+        <div class="premise-item">
+          <div class="premise-num">
+            <div class="premise-circle">2</div>
+            <div class="premise-line"></div>
+          </div>
+          <div class="premise-body">
+            <div class="premise-head">We can't lead differently without Dir+ evolving — here's what that looks like</div>
+            <div class="premise-sub">Agreed in Chapter 5. The ELT co-designed the Dir+ standard. Those expectations are now owned by this room.</div>
+          </div>
+        </div>
+        <div class="premise-item">
+          <div class="premise-num">
+            <div class="premise-circle">3</div>
+          </div>
+          <div class="premise-body">
+            <div class="premise-head">We've agreed on what needs to happen — here are the mechanisms that make it real</div>
+            <div class="premise-sub">Performance cycle linkage and rewards alignment are the structures that prevent this from becoming another stated aspiration.</div>
+          </div>
+        </div>
+      </div>
+      <div class="pull-quote a4" style="margin-top:1.25rem">
+        <p>Objecting to the mechanisms requires contradicting positions already taken in this room. That's not a trap — it's the logic of the argument made visible.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 5: CLOSE / WHAT'S NEXT ── -->
+  <div class="slide bg-light center" id="s34">
+    <div class="reflect-card-purple a0" style="max-width:720px">
+      <div class="reflect-icon">🏁</div>
+      <div class="reflect-label-purple">Close · Chapter 6</div>
+      <div class="reflect-question">We've agreed on what needs to change, how we'll lead it, and what makes it real. What happens next?</div>
+      <div class="reflect-prompts">
+        <div class="reflect-prompt"><div class="rp-dot-purple"></div><div class="rp-text">The Enterprise Leader Standard and Dir+ Behavioral Reference Guide go to Dir+ leaders in the rollout — mid-June target.</div></div>
+        <div class="reflect-prompt"><div class="rp-dot-purple"></div><div class="rp-text">The ELT's operating behaviors take effect immediately — the First Team compact begins now.</div></div>
+        <div class="reflect-prompt"><div class="rp-dot-purple"></div><div class="rp-text">The organization takes its cues from how you talk about this when you leave this room.</div></div>
+      </div>
+      <div class="reflect-cta-purple">The measure of this session is what the organization can do six months from now that it can't do today.</div>
+    </div>
+  </div>
+
+</div><!-- /course -->
+
+<!-- ══════════════════════════════════════
+  COMPLETE / TRANSITION SCREEN
+══════════════════════════════════════ -->
+<div id="complete">
+  <img src="data:image/png;base64,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" class="cs-logo" alt="TreviPay" class="cs-logo">
+  <div class="cs-eyebrow">Primer complete</div>
+  <h2 class="cs-title">Ready to <em>build it together</em></h2>
+  <p class="cs-sub">You've seen the diagnosis. Now it's time to do the work. The workshop begins on the next screen — each person opens it on their device and joins with a session code.</p>
+  <button class="cs-btn" onclick="enterWorkshop()">Enter the Workshop →</button>
+</div>
+
+<!-- ══════════════════════════════════════
+  FLOATING NAV (inside course)
+══════════════════════════════════════ -->
+<div id="nav">
+  <button class="nbtn" id="bp" onclick="prev()" disabled>←</button>
+  <div class="ndots" id="ndots"></div>
+  <span class="nlbl" id="nlbl"></span>
+  <button class="nbtn" id="bn" onclick="next()">→</button>
+</div>
+
+<!-- ══════════════════════════════════════
+  SESSION TOOL (injected when entering workshop)
+══════════════════════════════════════ -->
+<div id="session-tool">
+  <div class="topbar">
+    <img src="data:image/png;base64,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" class="topbar-logo" alt="TreviPay">
+    <div class="topbar-mid" id="sess-topbar-mid">Enterprise Operating Behaviors · ELT Workshop</div>
+    <div class="topbar-right">
+      <span class="count-lbl"><span class="live-dot"></span><span id="sess-count">0 participants</span></span>
+      <span class="tbadge" id="role-badge" style="display:none"></span>
+      <span class="tbadge tbadge-code" id="sess-code-badge"></span>
+    </div>
+  </div>
+
+  <!-- Landing state (before facilitator starts) -->
+  <div class="sess-land" id="sess-land-wrap">
+    <div class="sess-land-box">
+      <img src="data:image/png;base64,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" class="sess-land-logo" alt="TreviPay">
+      <div class="sess-transition-msg">✦ Primer complete — now let's put it into practice</div>
+      <div class="sess-eye">Live Workshop</div>
+      <h2 class="sess-h">Enterprise Operating Behaviors</h2>
+      <p class="sess-sub">The facilitator starts the session and shares a code. Everyone joins on their own device.</p>
+
+      <input class="sfield" id="fac-name" placeholder="Your name" maxlength="40">
+      <button class="sbtn-primary" onclick="startFacilitator()">Start Session as Facilitator</button>
+      <div class="code-display" id="code-display">
+        <div class="code-lbl">Share this code with participants</div>
+        <div class="code-val" id="code-value"></div>
+      </div>
+      <div id="btn-begin-wrap" style="display:none">
+        <button class="sbtn-primary" style="background:var(--green)" onclick="beginWorkshop()">Begin Workshop →</button>
+      </div>
+      <div class="serr" id="err-create"></div>
+
+      <div class="sdivider">or join an existing session</div>
+
+      <input class="sfield" id="part-name" placeholder="Your name" maxlength="40">
+      <div class="sjoin-row">
+        <input class="sfield sfield-code" id="join-code" placeholder="Session code" maxlength="6">
+        <button class="sbtn-ghost" onclick="joinAsParticipant()">Join →</button>
+      </div>
+      <div class="serr" id="err-join"></div>
+    </div>
+  </div>
+
+  <!-- Workshop state (after begin) -->
+  <div id="sess-workshop" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+    <div class="sess-tabs" id="sess-tabs"></div>
+    <div class="sess-body" id="sess-body"></div>
+    <div class="btmbar">
+      <div class="btm-info" id="btm-info">Select a behavior above to begin.</div>
+      <div class="btm-btns">
+        <button class="btn-exp" onclick="goExport()">📄 Export</button>
+        <button class="btn-synth" onclick="doSynth()">✦ AI Synthesize</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export state -->
+  <div id="s-export" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+    <div class="exp-header">
+      <div><h1>Session Summary</h1><p>TreviPay ELT Offsite · Enterprise Operating Behaviors Workshop</p></div>
+      <img src="data:image/png;base64,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" style="height:26px;mix-blend-mode:screen" alt="TreviPay">
+    </div>
+    <div class="exp-body" id="exp-body"></div>
+    <div class="exp-footer">
+      <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <button class="btn-back" onclick="backToWorkshop()">← Back to Workshop</button>
+    </div>
+  </div>
+</div>
+
+<!-- Synthesis modal -->
+<div class="s-overlay" id="s-overlay">
+  <div class="s-modal">
+    <div class="s-mhead">
+      <div class="s-mhead-title" id="s-mtitle">AI Synthesis</div>
+      <button class="s-mclose" onclick="closeSynthModal()">×</button>
+    </div>
+    <div class="s-mbody" id="s-mbody"></div>
+  </div>
+</div>
+
+<script>
+// ----------------------------------------
+//  CONFIG
+// ----------------------------------------
+const FLOW_URL = 'https://default28e9e2cb8acc497ea353a2e0c69886.97.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1a4040d4f05c451eb02ac72562c2e1d0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=C1ykAXxwgPXYq33OinakCQE6KvKXNZPKzafgVkItgqc';
+
+// ----------------------------------------
+//  PRIMER ENGINE (exact pattern from course)
+// ----------------------------------------
+const TOTAL = 35;
+const LABELS = [
+  "Where We Are","Greiner's Model","Two Dimensions","What This Means","Reflect",
+  "The Core Tension","The Gap","The Legitimacy Gap","The Trust Equation","Reflect",
+  "What Has to Change","The Shift","What It Unlocks","The Ask","Reflect",
+  "Our Norms","The Six Behaviors","The Behaviors","Why These Six","Reflect","Ready",
+  // Chapter 5
+  "Dir+ Standard","The Identity Shift","Six Behavioral Shifts","The 7 Competencies","Discussion",
+  // Chapter 6
+  "Accountability","Why Mechanisms Matter","The Two Mechanisms","Rewards Alignment","Performance Distribution","Checks & Balances","ELT Calibration","Three-Premise Close","What Happens Next"
+];
+const CHAPTER_ENDS = [4, 9, 15, 20, 25, 34];
+const CHAPTER_NAMES = ["Where We Are", "The Core Tension", "What Has to Change", "The Six Behaviors", "The Dir+ Standard", "Accountability"];
+const SLIDE_IDS = Array.from({length:TOTAL},(_,i)=>'s'+i);
+const NEXT_LABELS = ["The Core Tension →", "What Has to Change →", "The Six Behaviors →", "Enter the Workshop →", "Accountability →", "Session Complete →"];
+let cur = -1;
+
+function getChapter(i){ for(let c=0;c<CHAPTER_ENDS.length;c++){ if(i<=CHAPTER_ENDS[c]) return c; } return CHAPTER_ENDS.length-1; }
+
+function updateBar(i){
+  const ch = getChapter(i);
+  for(let c=0;c<6;c++){
+    const s = document.getElementById('pb'+c);
+    s.className = 'pb-seg'+(c<ch?' done':c===ch?' active':'');
+  }
+  document.getElementById('phase-name').textContent = CHAPTER_NAMES[ch];
+  const chStart = ch===0?0:CHAPTER_ENDS[ch-1]+1;
+  const chEnd = CHAPTER_ENDS[ch];
+  const pct = ((i-chStart)/(chEnd-chStart))*100;
+  document.getElementById('progress').style.width = pct+'%';
+}
+
+function buildDots(i){
+  const ch = getChapter(i);
+  const chStart = ch===0?0:CHAPTER_ENDS[ch-1]+1;
+  const chEnd = CHAPTER_ENDS[ch];
+  const c = document.getElementById('ndots');
+  c.innerHTML = '';
+  for(let j=chStart;j<=chEnd;j++){
+    const d = document.createElement('div');
+    d.className = 'ndot'+(j===i?' on':'');
+    d.onclick = (j=>()=>go(j))(j);
+    c.appendChild(d);
+  }
+}
+
+function removeNextBtn(){ const b=document.getElementById('np-wrap'); if(b) b.remove(); }
+
+function addNextBtn(i){
+  removeNextBtn();
+  const ch = getChapter(i);
+  const isLast = i===TOTAL-1;
+  const sl = document.getElementById(SLIDE_IDS[i]);
+  // Find the main content container in the slide — fallback to slide itself
+  const container = sl.querySelector('[style*="max-width"]') || sl;
+  const wrap = document.createElement('div');
+  wrap.id = 'np-wrap';
+  wrap.style.cssText = 'text-align:center;margin-top:1.75rem;position:relative;z-index:2';
+  const btn = document.createElement('button');
+  btn.className = isLast ? 'np-btn final' : 'np-btn';
+  btn.textContent = NEXT_LABELS[ch];
+  btn.onclick = isLast ? showComplete : (ch===3 ? enterWorkshop : ()=>go(i+1));
+  wrap.appendChild(btn);
+  container.appendChild(wrap);
+}
+
+function go(i){
+  if(i<0||i>=TOTAL) return;
+  if(cur>=0) document.getElementById(SLIDE_IDS[cur]).classList.remove('active');
+  removeNextBtn();
+  cur = i;
+  const sl = document.getElementById(SLIDE_IDS[cur]);
+  sl.classList.add('active');
+  // Re-trigger animations
+  sl.querySelectorAll('[class*="a0"],[class*="a1"],[class*="a2"],[class*="a3"],[class*="a4"],[class*="a5"],[class*="a6"],[class*="ar0"],[class*="ar1"],[class*="sc0"],[class*="sc1"],[class*="sc2"],[class*="sc3"]').forEach(el=>{
+    el.style.animation='none';
+    el.offsetHeight; // reflow
+    el.style.animation='';
+  });
+  buildDots(i);
+  updateBar(i);
+  document.getElementById('bp').disabled = i===0;
+  document.getElementById('bn').disabled = CHAPTER_ENDS.includes(i);
+  document.getElementById('nlbl').textContent = LABELS[i]||'';
+  if(CHAPTER_ENDS.includes(i)) addNextBtn(i);
+}
+
+function next(){ if(!CHAPTER_ENDS.includes(cur)&&cur<TOTAL-1) go(cur+1); }
+function prev(){ if(cur>0) go(cur-1); }
+
+function startCourse(startIdx){
+  document.body.classList.add('course-active');
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('complete').classList.remove('active');
+  document.getElementById('course').classList.add('active');
+  document.getElementById('nav').style.display = 'flex';
+  go(startIdx);
+}
+
+function showComplete(){
+  if(cur>=0){ document.getElementById(SLIDE_IDS[cur]).classList.remove('active'); removeNextBtn(); }
+  document.getElementById('course').classList.remove('active');
+  document.getElementById('nav').style.display = 'none';
+  document.getElementById('complete').classList.add('active');
+}
+
+function goHome(){
+  document.body.classList.remove('course-active');
+  document.getElementById('complete').classList.remove('active');
+  document.getElementById('course').classList.remove('active');
+  document.getElementById('home').style.display = 'block';
+  document.getElementById('nav').style.display = 'none';
+  cur = -1;
+}
+
+function exitWorkshopToDirPlus(){
+  document.getElementById('session-tool').classList.remove('active');
+  document.getElementById('home').style.display = 'none';
+  startCourse(21);
+}
+
+function enterWorkshop(){
+  document.getElementById('complete').classList.remove('active');
+  document.getElementById('session-tool').classList.add('active');
+  startPoll();
+}
+
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('course').classList.contains('active')){
+    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); next(); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); prev(); }
+    if(e.key==='Escape') goHome();
+  }
+});
+
+// Hide nav initially
+document.getElementById('nav').style.display = 'none';
+
+// ----------------------------------------
+//  SESSION TOOL ENGINE
+// ----------------------------------------
+const BEHAVIORS = [
+  {id:'b1',num:'01',icon:'🎯',title:'Clear Decision Ownership',      quote:'Every significant decision has a named owner accountable for the process, the outcome, and the communication.'},
+  {id:'b2',num:'02',icon:'🤝',title:'Peer-to-Peer Resolution',        quote:'Leaders resolve cross-functional issues directly with peers. Escalations are rare and reserved for enterprise-critical issues.'},
+  {id:'b3',num:'03',icon:'🏛',title:'Enterprise-First Trade-offs',    quote:'Decisions explicitly identify trade-offs and prioritize enterprise outcomes over functional optimization.'},
+  {id:'b4',num:'04',icon:'✅',title:'Decision Commitment',            quote:'Once a decision is made, the team aligns behind it and executes — even if they initially disagreed.'},
+  {id:'b5',num:'05',icon:'🔗',title:'Early Cross-Functional Engagement',quote:'Work that impacts multiple functions includes relevant stakeholders early — before direction is set.'},
+  {id:'b6',num:'06',icon:'📣',title:'Shared Accountability',          quote:'Leaders address misalignment directly with one another in real time. Silence is not alignment.'}
+];
+
+const SESSION = { role:null, name:'', code:'', uiBuilt:false, activeIdx:0 };
+const responses = {};
+const synths = {};
+const RENDERED = {};
+
+function genCode(){ return Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); }
+
+// Storage
+const sk=(c)=>'sess:'+c, rk=(c,b)=>'r:'+c+':'+b, synk=(c,b)=>'sy:'+c+':'+b, pk=(c)=>'p:'+c;
+async function sget(k){ try{ const r=await window.storage.get(k,true); return r?JSON.parse(r.value):null; }catch{ return null; } }
+async function sset(k,v){ try{ await window.storage.set(k,JSON.stringify(v),true); }catch(e){ console.warn(e); } }
+
+async function startFacilitator(){
+  const name=document.getElementById('fac-name').value.trim();
+  if(!name){ document.getElementById('err-create').textContent='Please enter your name.'; return; }
+  const code=genCode();
+  SESSION.role='facilitator'; SESSION.name=name; SESSION.code=code;
+  await sset(sk(code),{code,status:'waiting',ts:Date.now()});
+  await sset(pk(code),[{name,role:'facilitator'}]);
+  BEHAVIORS.forEach(async b=>{ await sset(rk(code,b.id),[]); responses[b.id]=[]; });
+  document.getElementById('code-display').style.display='block';
+  document.getElementById('code-value').textContent=code;
+  document.getElementById('btn-begin-wrap').style.display='block';
+  document.getElementById('fac-name').disabled=true;
+}
+
+async function beginWorkshop(){
+  await sset(sk(SESSION.code),{code:SESSION.code,status:'session',ts:Date.now()});
+  buildUI();
+  document.getElementById('sess-land-wrap').style.display='none';
+  const sw=document.getElementById('sess-workshop');
+  sw.style.display='flex';
+}
+
+async function joinAsParticipant(){
+  const name=document.getElementById('part-name').value.trim();
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  const err=document.getElementById('err-join');
+  err.textContent='';
+  if(!name){ err.textContent='Please enter your name.'; return; }
+  if(code.length<4){ err.textContent='Please enter the session code.'; return; }
+  const sess=await sget(sk(code));
+  if(!sess){ err.textContent='Session not found. Check the code and try again.'; return; }
+  SESSION.role='participant'; SESSION.name=name; SESSION.code=code;
+  const parts=(await sget(pk(code)))||[];
+  if(!parts.find(p=>p.name===name)){ parts.push({name,role:'participant'}); await sset(pk(code),parts); }
+  BEHAVIORS.forEach(b=>responses[b.id]=[]);
+  buildUI();
+  document.getElementById('sess-land-wrap').style.display='none';
+  const sw=document.getElementById('sess-workshop');
+  sw.style.display='flex';
+  if(sess.status!=='session'){
+    document.querySelectorAll('.rinput').forEach(i=>i.disabled=true);
+    document.querySelectorAll('.sbtn').forEach(b=>b.disabled=true);
+  }
+}
+
+function buildUI(){
+  if(SESSION.uiBuilt) return;
+  SESSION.uiBuilt=true;
+  const rb=document.getElementById('role-badge');
+  rb.textContent=SESSION.role==='facilitator'?'⚙ Facilitator':'✦ '+SESSION.name;
+  rb.className='tbadge '+(SESSION.role==='facilitator'?'tbadge-fac':'tbadge-part');
+  rb.style.display='inline';
+  document.getElementById('sess-code-badge').textContent='CODE: '+SESSION.code;
+  const tabsEl=document.getElementById('sess-tabs');
+  const bodyEl=document.getElementById('sess-body');
+  tabsEl.innerHTML=''; bodyEl.innerHTML='';
+  BEHAVIORS.forEach((b,i)=>{
+    responses[b.id]=responses[b.id]||[];
+    RENDERED[b.id+'-yes']=new Set(); RENDERED[b.id+'-no']=new Set();
+    const tab=document.createElement('div');
+    tab.className='stab'+(i===0?' active':''); tab.id='tab-'+b.id;
+    tab.onclick=()=>switchTab(i);
+    tab.innerHTML='<span class="tnum">'+b.num+'</span>'+b.title;
+    tabsEl.appendChild(tab);
+    const panel=document.createElement('div');
+    panel.className='bpanel'+(i===0?' active':''); panel.id='panel-'+b.id;
+    panel.innerHTML=`<div class="bdef"><div class="bdef-icon">${b.icon}</div><div><div class="bdef-num">Behavior ${b.num}</div><div class="bdef-title">${b.title}</div><div class="bdef-quote">"${b.quote}"</div></div></div><div class="cols"><div class="col"><div class="col-head g"><div class="col-lbl"><div class="rdot g"></div>Looks like</div><div class="col-cnt" id="cnt-${b.id}-yes">0</div></div><div class="rlist" id="list-${b.id}-yes"></div><div class="iarea"><input class="rinput" id="inp-${b.id}-yes" placeholder="What does this look like in practice?"><button class="sbtn g" onclick="addResp('${b.id}','yes')">+</button></div></div><div class="col"><div class="col-head r"><div class="col-lbl"><div class="rdot r"></div>Not this</div><div class="col-cnt" id="cnt-${b.id}-no">0</div></div><div class="rlist" id="list-${b.id}-no"></div><div class="iarea"><input class="rinput" id="inp-${b.id}-no" placeholder="What does this NOT look like?"><button class="sbtn r" onclick="addResp('${b.id}','no')">+</button></div></div></div>`;
+    bodyEl.appendChild(panel);
+    ['yes','no'].forEach(t=>{ panel.querySelector('#inp-'+b.id+'-'+t).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addResp(b.id,t); } }); });
+  });
+  updateBar2();
+}
+
+function switchTab(idx){
+  SESSION.activeIdx=idx;
+  document.querySelectorAll('.stab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.bpanel').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  updateBar2();
+}
+
+function updateBar2(){
+  const b=BEHAVIORS[SESSION.activeIdx];
+  const total=(responses[b.id]||[]).length;
+  document.getElementById('btm-info').textContent=total+' response'+(total!==1?'s':'')+' for "'+b.title+'"';
+}
+
+async function addResp(bid,type){
+  const inp=document.getElementById('inp-'+bid+'-'+type);
+  const text=inp.value.trim(); if(!text) return;
+  inp.value='';
+  const id=Date.now()+'-'+Math.random().toString(36).slice(2,6);
+  const entry={id,text,type,author:SESSION.name};
+  responses[bid]=[...(responses[bid]||[]),entry];
+  paintCard(bid,type,entry); updateCnt(bid); updateBar2();
+  await sset(rk(SESSION.code,bid),responses[bid]);
+}
+
+async function delResp(bid,id){
+  responses[bid]=(responses[bid]||[]).filter(r=>r.id!==id);
+  ['yes','no'].forEach(t=>{ document.querySelector('#list-'+bid+'-'+t+' [data-id="'+id+'"]')?.remove(); RENDERED[bid+'-'+t]?.delete(id); });
+  updateCnt(bid); updateBar2();
+  await sset(rk(SESSION.code,bid),responses[bid]);
+}
+
+function paintCard(bid,type,r){
+  const rkey=bid+'-'+type;
+  if(RENDERED[rkey]?.has(r.id)) return;
+  RENDERED[rkey]=RENDERED[rkey]||new Set(); RENDERED[rkey].add(r.id);
+  const list=document.getElementById('list-'+bid+'-'+type); if(!list) return;
+  const card=document.createElement('div');
+  card.className='rcard '+(type==='yes'?'gc':'rc'); card.dataset.id=r.id;
+  const del=SESSION.role==='facilitator'?`<button class="rcard-del" onclick="delResp('${bid}','${r.id}')">×</button>`:''; 
+  card.innerHTML='<div class="rcard-auth">'+esc(r.author)+'</div><div>'+esc(r.text)+'</div>'+del;
+  list.appendChild(card); list.scrollTop=list.scrollHeight;
+}
+
+function updateCnt(bid){
+  ['yes','no'].forEach(t=>{ const el=document.getElementById('cnt-'+bid+'-'+t); if(el) el.textContent=(responses[bid]||[]).filter(r=>r.type===t).length; });
+}
+
+function esc(s=''){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let _pt=null;
+function startPoll(){
+  if(_pt) return; _pt=setInterval(doPoll,3000); doPoll();
+}
+
+async function doPoll(){
+  const code=SESSION.code; if(!code) return;
+  const parts=(await sget(pk(code)))||[];
+  const ct=parts.length+' participant'+(parts.length!==1?'s':'');
+  ['sess-count'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=ct; });
+  if(!SESSION.uiBuilt){
+    const sess=await sget(sk(code));
+    if(sess?.status==='session'){
+      buildUI();
+      document.getElementById('sess-land-wrap').style.display='none';
+      document.getElementById('sess-workshop').style.display='flex';
+    }
+  }
+  if(SESSION.uiBuilt){
+    for(const b of BEHAVIORS){
+      const remote=await sget(rk(code,b.id)); if(!remote) continue;
+      remote.forEach(r=>{ if(!(responses[b.id]||[]).find(x=>x.id===r.id)){ responses[b.id]=[...(responses[b.id]||[]),r]; paintCard(b.id,r.type,r); updateCnt(b.id); updateBar2(); } });
+      const remoteIds=new Set(remote.map(r=>r.id));
+      (responses[b.id]||[]).filter(r=>!remoteIds.has(r.id)).forEach(r=>{
+        responses[b.id]=responses[b.id].filter(x=>x.id!==r.id);
+        ['yes','no'].forEach(t=>{ document.querySelector('#list-'+b.id+'-'+t+' [data-id="'+r.id+'"]')?.remove(); RENDERED[b.id+'-'+t]?.delete(r.id); });
+        updateCnt(b.id);
+      });
+      const syn=await sget(synk(code,b.id));
+      if(syn&&!synths[b.id]){ synths[b.id]=syn; document.getElementById('tab-'+b.id)?.classList.add('done'); }
+    }
+  }
+}
+
+async function doSynth(){
+  const b=BEHAVIORS[SESSION.activeIdx];
+  const all=responses[b.id]||[];
+  const yes=all.filter(r=>r.type==='yes').map(r=>r.text);
+  const no=all.filter(r=>r.type==='no').map(r=>r.text);
+  if(!yes.length&&!no.length){ alert('Add some responses first.'); return; }
+  document.getElementById('s-mtitle').textContent='✦ '+b.title+' — AI Synthesis';
+  document.getElementById('s-mbody').innerHTML='<div class="s-spin-wrap"><div class="s-spin"></div>Synthesizing responses\u2026</div>';
+  document.getElementById('s-overlay').classList.add('on');
+  const prompt='You are a neutral facilitator summarizing live workshop responses from TreviPay ELT.\n\nBEHAVIOR: "'+b.title+'"\nDEFINITION: "'+b.quote+'"\n\nLOOKS LIKE ('+yes.length+' responses):\n'+yes.map((t,i)=>(i+1)+'. '+t).join('\n')+'\n\nDOES NOT LOOK LIKE ('+no.length+' responses):\n'+no.map((t,i)=>(i+1)+'. '+t).join('\n')+'\n\nReturn valid JSON only:\n{"summary":"1-2 sentence intro of the overall theme, then use the • character to list one bullet per distinct theme from the responses. Reflect their words back neutrally.","questions":"2-3 discussion questions one per line each starting with Q:"}';
+  try{
+    const res=await fetch(FLOW_URL,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({behaviorTitle:b.title,behaviorDefinition:b.quote,looksLike:yes,notThis:no,prompt}) });
+    if(!res.ok) throw new Error('Flow returned '+res.status);
+    const text=await res.text();
+    let parsed;
+    try{
+      const data=JSON.parse(text);
+      const raw=data.response||data.text||data.summary||text;
+      try{ parsed=JSON.parse(raw.replace(/[`][`][`]json|[`][`][`]/g,'').trim()); }
+      catch{ parsed={summary:raw,questions:''}; }
+    }catch{
+      const jm=text.match(/\{[\s\S]*"summary"[\s\S]*\}/);
+      if(jm){ try{ parsed=JSON.parse(jm[0]); }catch{ parsed={summary:text,questions:''}; } }
+      else{ parsed={summary:text,questions:''}; }
+    }
+    await saveSynth(b,parsed);
+  }catch(e){
+    document.getElementById('s-mbody').innerHTML='<div style="padding:20px;color:var(--red);font-size:13px"><strong>Could not reach the Power Automate flow.</strong><br><small style="color:var(--on-ink-muted)">'+e.message+'</small></div>';
+  }
+}
+
+async function saveSynth(b,parsed){
+  synths[b.id]=parsed; await sset(synk(SESSION.code,b.id),parsed);
+  document.getElementById('tab-'+b.id)?.classList.add('done');
+  function fmtSummary(text){
+    if(!text) return '';
+    var e=esc(text);
+    if(e.indexOf('\u2022')>=0){
+      var parts=e.split('\u2022').map(function(s){return s.trim();}).filter(Boolean);
+      var intro=parts[0];
+      var bullets=parts.slice(1).map(function(item){return '<li style="display:flex;gap:8px;margin-bottom:8px"><span style="color:var(--c);flex-shrink:0">\u2022</span><span style="font-size:15px;line-height:1.6;color:rgba(255,255,255,.88)">'+item+'</span></li>';}).join('');
+      return (intro?'<p style="margin-bottom:12px;font-size:15px;color:rgba(255,255,255,.88)">'+intro+'</p>':'')+'<ul style="list-style:none;padding:0;margin:0">'+bullets+'</ul>';
+    }
+    return e.replace(/\n/g,'<br>');
+  }
+  document.getElementById('s-mbody').innerHTML='<div class="s-msec"><div class="s-mlbl">\u2736 Team synthesis</div><div class="s-mblue">'+fmtSummary(parsed.summary||'')+'</div></div><div class="s-msec"><div class="s-mlbl">🔍 Questions to go deeper</div><div class="s-mamber">'+esc(parsed.questions||'').replace(/\n/g,'<br>').replace(/Q:/g,'<strong style="color:var(--c)">Q:</strong>')+'</div></div>';
+}
+function closeSynthModal(){ document.getElementById('s-overlay').classList.remove('on'); }
+
+function goExport(){
+  let html='';
+  BEHAVIORS.forEach(b=>{
+    const all=responses[b.id]||[]; const yes=all.filter(r=>r.type==='yes'); const no=all.filter(r=>r.type==='no'); const syn=synths[b.id];
+    html+='<div class="exp-beh"><div class="exp-head">'+b.icon+' '+b.num+' — '+b.title+'</div><div class="exp-cols"><div class="exp-col"><div class="exp-clbl g">✓ Looks like</div>'+(yes.length?yes.map(r=>'<div class="exp-item">'+esc(r.text)+' <span style="color:var(--on-ink-muted);font-size:10px">'+esc(r.author)+'</span></div>').join(''):'<div class="exp-item" style="opacity:.4">No responses</div>')+'</div><div class="exp-col"><div class="exp-clbl r">✗ Not this</div>'+(no.length?no.map(r=>'<div class="exp-item">'+esc(r.text)+' <span style="color:var(--on-ink-muted);font-size:10px">'+esc(r.author)+'</span></div>').join(''):'<div class="exp-item" style="opacity:.4">No responses</div>')+'</div></div>'+(syn?'<div class="exp-syn"><div class="exp-slbl">✦ AI Synthesis</div><div class="exp-stxt">'+esc(syn.summary||'').replace(/\n/g,'<br>')+'</div></div><div class="exp-q"><div class="exp-qlbl">🔍 Discussion questions</div><div class="exp-qtxt">'+esc(syn.questions||'').replace(/\n/g,'<br>').replace(/Q:/g,'<strong>Q:</strong>')+'</div></div>':'<div class="exp-syn"><div class="exp-slbl" style="color:var(--on-ink-muted)">Not yet synthesized</div></div>')+'</div>';
+  });
+  document.getElementById('exp-body').innerHTML=html;
+  document.getElementById('sess-workshop').style.display='none';
+  document.getElementById('s-export').style.display='flex';
+}
+
+function backToWorkshop(){
+  document.getElementById('s-export').style.display='none';
+  document.getElementById('sess-workshop').style.display='flex';
+}
+</script>
+</body>
+</html>
