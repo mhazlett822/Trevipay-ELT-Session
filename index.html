@@ -1948,8 +1948,33 @@ function genCode(){ return Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23
 
 // Storage
 const sk=(c)=>'sess:'+c, rk=(c,b)=>'r:'+c+':'+b, synk=(c,b)=>'sy:'+c+':'+b, pk=(c)=>'p:'+c;
-async function sget(k){ try{ const r=await window.storage.get(k,true); return r?JSON.parse(r.value):null; }catch{ return null; } }
-async function sset(k,v){ try{ await window.storage.set(k,JSON.stringify(v),true); }catch(e){ console.warn(e); } }
+// ── Shared storage: Firebase Realtime Database ──
+// Works on GitHub Pages, SharePoint, or any hosted URL
+// Set FIREBASE_URL to your Firebase project URL (no trailing slash)
+const FIREBASE_URL = 'https://tp-workshops-default-rtdb.firebaseio.com';
+
+function fbKey(k){ return k.replace(/:/g,'-').replace(/[.#$/[\]]/g,'_'); }
+
+async function sget(k){
+  try{
+    const url = FIREBASE_URL + '/' + fbKey(k) + '.json';
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const j = await r.json();
+    return j === null ? null : j;
+  }catch{ return null; }
+}
+
+async function sset(k,v){
+  try{
+    const url = FIREBASE_URL + '/' + fbKey(k) + '.json';
+    await fetch(url,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(v)
+    });
+  }catch(e){ console.warn('sset failed',e); }
+}
 
 async function startFacilitator(){
   const name=document.getElementById('fac-name').value.trim();
